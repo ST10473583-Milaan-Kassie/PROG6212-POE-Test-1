@@ -29,6 +29,9 @@ public class User
     //null until they upload a pic
     public string? ProfileImageURL { get; set; }
 
-    //the role this user belongs to, EF fills this in
+    //the role this user belongs to, ef fills this in
     public Role Role { get; set; } = null!;
+
+    //the events this user has created, only organisers will have any
+    public ICollection<Event> Events { get; set; } = new List<Event>();
 }
