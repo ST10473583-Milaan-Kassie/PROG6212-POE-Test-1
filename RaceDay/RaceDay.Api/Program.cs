@@ -1,6 +1,6 @@
 var builder = WebApplication.CreateBuilder(args);
 
-//registers the controllers so the API can find the endpoints
+//registers the controllers so the api can find the endpoints
 builder.Services.AddControllers();
 
 var app = builder.Build();
