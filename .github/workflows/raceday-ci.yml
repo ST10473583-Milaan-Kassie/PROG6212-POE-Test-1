@@ -1,0 +1,232 @@
+name: RaceDay CI
+
+on:
+  push:
+    branches: [ main, part-2 ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check repository structure
+        id: checks
+        run: |
+          # Defaults
+          docs="❌ NOT DONE"; erd="❌ NOT DONE"; endpoint="❌ NOT DONE"; sql="❌ NOT DONE"; readme="❌ NOT DONE"
+          completed=0
+
+          # 1. Check /docs folder
+          if [ -d "docs" ]; then
+            docs="✔ DONE"; completed=$((completed + 1))
+            
+            # 2. Check ERD
+            if find docs -maxdepth 1 \( -iname "*erd*.png" -o -iname "*erd*.pdf" \) | grep -q .; then
+              erd="✔ DONE"; completed=$((completed + 1))
+            fi
+
+            # 3. Check Endpoint
+            if find docs -maxdepth 1 \( -iname "*endpoint*.pdf" -o -iname "*endpoint*.md" \) | grep -q .; then
+              endpoint="✔ DONE"; completed=$((completed + 1))
+            fi
+
+            # 4. Check SQL
+            if find docs -maxdepth 1 -iname "*.sql" | grep -q .; then
+              sql="✔ DONE"; completed=$((completed + 1))
+            fi
+          fi
+
+          # 5. Check README
+          if [ -f "README.md" ]; then
+            readme="✔ DONE"; completed=$((completed + 1))
+          fi
+
+          # Output all at once
+          {
+            echo "docs=$docs"
+            echo "erd=$erd"
+            echo "endpoint=$endpoint"
+            echo "sql=$sql"
+            echo "readme=$readme"
+            echo "completed=$completed"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create validation summary
+        env:
+          DOCS: ${{ steps.checks.outputs.docs }}
+          ERD: ${{ steps.checks.outputs.erd }}
+          ENDPOINT: ${{ steps.checks.outputs.endpoint }}
+          SQL: ${{ steps.checks.outputs.sql }}
+          README: ${{ steps.checks.outputs.readme }}
+          COMPLETED: ${{ steps.checks.outputs.completed }}
+        run: |
+          {
+            echo "# Repository Structure Progress"
+            echo ""
+            echo "| Requirement | Status |"
+            echo "|---|---|"
+            echo "| \`/docs\` folder | $DOCS |"
+            echo "| ERD file | $ERD |"
+            echo "| API endpoint plan | $ENDPOINT |"
+            echo "| SQL script | $SQL |"
+            echo "| \`README.md\` | $README |"
+            echo ""
+            echo "**$COMPLETED / 5 requirements completed.**"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Part 2 structure
+        id: structure
+        run: |
+          # Defaults
+          solution="❌ NOT DONE"; api="❌ NOT DONE"; tests="❌ NOT DONE"
+          solution_path=""; has_solution=false; has_tests=false
+          completed=0
+
+          # 1. Check solution file, newer visual studio makes a .slnx and older versions make a .sln
+          if [ -f "RaceDay/RaceDay.slnx" ]; then
+            solution_path="RaceDay/RaceDay.slnx"
+          elif [ -f "RaceDay/RaceDay.sln" ]; then
+            solution_path="RaceDay/RaceDay.sln"
+          fi
+
+          if [ -n "$solution_path" ]; then
+            solution="✔ DONE"; has_solution=true; completed=$((completed + 1))
+          fi
+
+          # 2. Check API project
+          if [ -f "RaceDay/RaceDay.Api/RaceDay.Api.csproj" ]; then
+            api="✔ DONE"; completed=$((completed + 1))
+          fi
+
+          # 3. Check test project
+          if [ -f "RaceDay/RaceDay.Api.Tests/RaceDay.Api.Tests.csproj" ]; then
+            tests="✔ DONE"; has_tests=true; completed=$((completed + 1))
+          fi
+
+          # Output all at once
+          {
+            echo "solution=$solution"
+            echo "api=$api"
+            echo "tests=$tests"
+            echo "solution_path=$solution_path"
+            echo "has_solution=$has_solution"
+            echo "has_tests=$has_tests"
+            echo "completed=$completed"
+          } >> "$GITHUB_OUTPUT"
+
+      # only runs once the solution exists, otherwise theres nothing to build yet
+      - name: Set up .NET
+        if: steps.structure.outputs.has_solution == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # continue-on-error lets the summary table still get written if this fails, the last step turns the run red
+      - name: Restore dependencies
+        id: restore
+        if: steps.structure.outputs.has_solution == 'true'
+        continue-on-error: true
+        env:
+          SOLUTION: ${{ steps.structure.outputs.solution_path }}
+        run: dotnet restore "$SOLUTION"
+
+      - name: Build
+        id: build
+        if: steps.restore.outcome == 'success'
+        continue-on-error: true
+        env:
+          SOLUTION: ${{ steps.structure.outputs.solution_path }}
+        run: dotnet build "$SOLUTION" --no-restore --configuration Release
+
+      # only runs once the build passes and the test project exists
+      # the trx file is where the passed, failed and total counts get read from
+      - name: Run unit tests
+        id: test
+        if: steps.build.outcome == 'success' && steps.structure.outputs.has_tests == 'true'
+        continue-on-error: true
+        env:
+          SOLUTION: ${{ steps.structure.outputs.solution_path }}
+        run: dotnet test "$SOLUTION" --no-build --configuration Release --logger "trx;LogFileName=test-results.trx" --results-directory TestResults
+
+      # always runs so the table shows up even when something failed
+      - name: Create build and test summary
+        if: always()
+        env:
+          SOLUTION: ${{ steps.structure.outputs.solution }}
+          API: ${{ steps.structure.outputs.api }}
+          TESTS: ${{ steps.structure.outputs.tests }}
+          STRUCTURE_COMPLETED: ${{ steps.structure.outputs.completed }}
+          RESTORE_OUTCOME: ${{ steps.restore.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+        run: |
+          # Defaults
+          restore="❌ NOT DONE"; build="❌ NOT DONE"; unit_tests="❌ NOT DONE"
+          completed=$STRUCTURE_COMPLETED
+
+          # 4. Check restore
+          if [ "$RESTORE_OUTCOME" = "success" ]; then
+            restore="✔ DONE"; completed=$((completed + 1))
+          elif [ "$RESTORE_OUTCOME" = "failure" ]; then
+            restore="❌ FAILED"
+          fi
+
+          # 5. Check build
+          if [ "$BUILD_OUTCOME" = "success" ]; then
+            build="✔ DONE"; completed=$((completed + 1))
+          elif [ "$BUILD_OUTCOME" = "failure" ]; then
+            build="❌ FAILED"
+          fi
+
+          # 6. Check unit tests, pulls the counts out of the trx file if there is one
+          counts=""
+          if [ -d "TestResults" ]; then
+            trx=$(find TestResults -name "*.trx" | head -n 1)
+            if [ -n "$trx" ]; then
+              counters=$(grep -o '<Counters [^>]*>' "$trx" || true)
+              total=$(echo "$counters" | grep -o ' total="[0-9]*"' | grep -o '[0-9]\+' || true)
+              passed=$(echo "$counters" | grep -o ' passed="[0-9]*"' | grep -o '[0-9]\+' || true)
+              failed=$(echo "$counters" | grep -o ' failed="[0-9]*"' | grep -o '[0-9]\+' || true)
+              counts=" ($passed passed, $failed failed, $total total)"
+            fi
+          fi
+
+          if [ "$TEST_OUTCOME" = "success" ]; then
+            unit_tests="✔ DONE$counts"; completed=$((completed + 1))
+          elif [ "$TEST_OUTCOME" = "failure" ]; then
+            unit_tests="❌ FAILED$counts"
+          fi
+
+          {
+            echo "# Part 2 Build and Test Progress"
+            echo ""
+            echo "| Requirement | Status |"
+            echo "|---|---|"
+            echo "| \`RaceDay\` solution file | $SOLUTION |"
+            echo "| \`RaceDay.Api\` project | $API |"
+            echo "| \`RaceDay.Api.Tests\` project | $TESTS |"
+            echo "| Restore | $restore |"
+            echo "| Build | $build |"
+            echo "| Unit tests | $unit_tests |"
+            echo ""
+            echo "**$completed / 6 requirements completed.**"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # missing pieces just show as NOT DONE, this only turns the run red when something that exists actually failed
+      - name: Fail the run if restore, build or tests failed
+        if: always() && (steps.restore.outcome == 'failure' || steps.build.outcome == 'failure' || steps.test.outcome == 'failure')
+        run: |
+          echo "restore, build or unit tests failed, check the Part 2 table in the run summary"
+          exit 1

@@ -134,7 +134,7 @@ The endpoint plan identifies the HTTP method, route, purpose, authentication and
 
 ## Changes since Part 1
 
-The Part 1 submission, exactly as it was handed in, is preserved in the [`part-1-submission`](https://github.com/EMKNDN/emkndn-prog6212-2026-prog6212-poe-st10473583-milaan-kassie/releases/tag/part-1-submission) release. Before development of the API began in Part 2, the planning documents were reviewed against the Part 2 requirements, and the amendments below were applied to the SQL script, ERD and API endpoint plan together, so that the three documents remain consistent with one another.
+The Part 1 submission, exactly as it was handed in, is preserved in the [`part-1-submission`](https://github.com/EMKNDN/emkndn-prog6212-2026-prog6212-poe-st10473583-milaan-kassie/releases/tag/part-1-submission) release. Before development of the API began in Part 2, the planning documents were reviewed against the Part 2 requirements, and the amendments below were applied to the SQL script, ERD and API endpoint plan together, so that the three documents remain consistent with one another. The CI workflow was also extended at the start of Part 2, as recorded in the final row of the table.
 
 | Change | Reason |
 | ------ | ------ |
@@ -148,6 +148,7 @@ The Part 1 submission, exactly as it was handed in, is preserved in the [`part-1
 | `409 Conflict` responses and a business rules section added to the endpoint plan. | Events that have taken place, and the records linked to them, are protected from changes so that participants' race history is preserved. |
 | `GET /api/event-types` endpoint and the query parameters for filtering events and enrolments added to the endpoint plan. | The front end in Part 3 needs the list of event types for its forms and filters, and the filters needed defined parameters. |
 | `/api/users/me/profilepicture` renamed to `/api/users/me/profile-picture`. | Multi-word routes now follow the same hyphenated format as `/api/event-types`. |
+| `validate-docs-workflow.yml` renamed to `raceday-ci.yml`, with a build and test job added alongside the unchanged Part 1 structure checks. | Part 2 requires the workflow to build the project and run all unit tests on every push. Keeping a single workflow places the structure, build and test results in one run, and allows Part 3 to extend the same workflow to build the MVC project. |
 
 ## CI/CD pipeline
 
