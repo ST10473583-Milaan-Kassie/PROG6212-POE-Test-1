@@ -1,0 +1,80 @@
+name: Validate Repository Structure
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check repository structure
+        id: checks
+        run: |
+          # Defaults
+          docs="❌ NOT DONE"; erd="❌ NOT DONE"; endpoint="❌ NOT DONE"; sql="❌ NOT DONE"; readme="❌ NOT DONE"
+          completed=0
+
+          # 1. Check /docs folder
+          if [ -d "docs" ]; then
+            docs="✔ DONE"; completed=$((completed + 1))
+            
+            # 2. Check ERD
+            if find docs -maxdepth 1 \( -iname "*erd*.png" -o -iname "*erd*.pdf" \) | grep -q .; then
+              erd="✔ DONE"; completed=$((completed + 1))
+            fi
+
+            # 3. Check Endpoint
+            if find docs -maxdepth 1 \( -iname "*endpoint*.pdf" -o -iname "*endpoint*.md" \) | grep -q .; then
+              endpoint="✔ DONE"; completed=$((completed + 1))
+            fi
+
+            # 4. Check SQL
+            if find docs -maxdepth 1 -iname "*.sql" | grep -q .; then
+              sql="✔ DONE"; completed=$((completed + 1))
+            fi
+          fi
+
+          # 5. Check README
+          if [ -f "README.md" ]; then
+            readme="✔ DONE"; completed=$((completed + 1))
+          fi
+
+          # Output all at once
+          {
+            echo "docs=$docs"
+            echo "erd=$erd"
+            echo "endpoint=$endpoint"
+            echo "sql=$sql"
+            echo "readme=$readme"
+            echo "completed=$completed"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create validation summary
+        env:
+          DOCS: ${{ steps.checks.outputs.docs }}
+          ERD: ${{ steps.checks.outputs.erd }}
+          ENDPOINT: ${{ steps.checks.outputs.endpoint }}
+          SQL: ${{ steps.checks.outputs.sql }}
+          README: ${{ steps.checks.outputs.readme }}
+          COMPLETED: ${{ steps.checks.outputs.completed }}
+        run: |
+          {
+            echo "# Repository Structure Progress"
+            echo ""
+            echo "| Requirement | Status |"
+            echo "|---|---|"
+            echo "| \`/docs\` folder | $DOCS |"
+            echo "| ERD file | $ERD |"
+            echo "| API endpoint plan | $ENDPOINT |"
+            echo "| SQL script | $SQL |"
+            echo "| \`README.md\` | $README |"
+            echo ""
+            echo "**$COMPLETED / 5 requirements completed.**"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
