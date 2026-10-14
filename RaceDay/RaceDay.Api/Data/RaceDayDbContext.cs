@@ -201,5 +201,8 @@ public class RaceDayDbContext : DbContext
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName("FK_Results_Enrolments");
         });
+
+        //adds the sample data, kept in SeedData.cs so this file stays about the structure
+        SeedData.Seed(modelBuilder);
     }
 }
