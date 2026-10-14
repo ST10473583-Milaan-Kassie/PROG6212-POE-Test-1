@@ -227,8 +227,8 @@ INSERT INTO Enrolments (UserID, EventID, CategoryID, Status) VALUES
 
 -- results, 2 inserts, only for comrades since that's the only event that's actually happened
 INSERT INTO Results (EnrolmentID, FinishTime, FinishingPosition) VALUES
-(1, '07:45:12', 4520),
-(2, '08:02:45', 6789);
+(1, '07:45:12', 1),
+(2, '08:02:45', 2);
 
 -- checking each table
 SELECT * FROM Roles;

@@ -69,6 +69,16 @@ public class ResultsController : ControllerBase
             return BadRequest(new { message = "Finishing position must be 1 or higher." });
         }
 
+        //nobody can finish lower than the number of confirmed participants, only they can get results
+        //counted against confirmed enrolments not captured results, since results can go in in any order
+        var confirmedParticipants = await _context.Enrolments
+            .CountAsync(en => en.EventID == enrolment.EventID && en.Status == EnrolmentStatuses.Confirmed);
+
+        if (request.FinishingPosition.Value > confirmedParticipants)
+        {
+            return BadRequest(new { message = $"Finishing position cannot be higher than the number of confirmed participants ({confirmedParticipants})." });
+        }
+
         if (request.FinishTime!.Value == TimeOnly.MinValue)
         {
             return BadRequest(new { message = "Finish time must be more than 00:00:00." });

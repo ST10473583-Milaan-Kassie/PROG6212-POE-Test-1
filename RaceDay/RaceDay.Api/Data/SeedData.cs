@@ -130,9 +130,10 @@ public static class SeedData
         );
 
         //results, only for comrades since thats the only event thats actually happened
+        //positions follow the finish times and stay within the number of confirmed participants
         modelBuilder.Entity<Result>().HasData(
-            new Result { ResultID = 1, EnrolmentID = 1, FinishTime = new TimeOnly(7, 45, 12), FinishingPosition = 4520 },
-            new Result { ResultID = 2, EnrolmentID = 2, FinishTime = new TimeOnly(8, 2, 45), FinishingPosition = 6789 }
+            new Result { ResultID = 1, EnrolmentID = 1, FinishTime = new TimeOnly(7, 45, 12), FinishingPosition = 1 },
+            new Result { ResultID = 2, EnrolmentID = 2, FinishTime = new TimeOnly(8, 2, 45), FinishingPosition = 2 }
         );
     }
 }

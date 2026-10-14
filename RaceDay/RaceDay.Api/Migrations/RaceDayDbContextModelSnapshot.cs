@@ -320,14 +320,14 @@ namespace RaceDay.Api.Migrations
                             ResultID = 1,
                             EnrolmentID = 1,
                             FinishTime = new TimeOnly(7, 45, 12),
-                            FinishingPosition = 4520
+                            FinishingPosition = 1
                         },
                         new
                         {
                             ResultID = 2,
                             EnrolmentID = 2,
                             FinishTime = new TimeOnly(8, 2, 45),
-                            FinishingPosition = 6789
+                            FinishingPosition = 2
                         });
                 });
 

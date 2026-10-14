@@ -227,6 +227,24 @@ public class EnrolmentsController : ControllerBase
             return BadRequest(new { message = "Status must be either Pending or Confirmed." });
         }
 
+        //setting a confirmed enrolment back to pending lowers the number of confirmed participants
+        //that number cant drop below the highest finishing position already captured for the event
+        if (enrolment.Status == EnrolmentStatuses.Confirmed && status == EnrolmentStatuses.Pending)
+        {
+            var confirmedParticipants = await _context.Enrolments
+                .CountAsync(en => en.EventID == enrolment.EventID && en.Status == EnrolmentStatuses.Confirmed);
+
+            //null when no results have been captured yet, so it falls back to 0
+            var highestPosition = await _context.Results
+                .Where(r => r.Enrolment.EventID == enrolment.EventID)
+                .MaxAsync(r => (int?)r.FinishingPosition) ?? 0;
+
+            if (highestPosition > confirmedParticipants - 1)
+            {
+                return Conflict(new { message = $"This enrolment cannot be set back to Pending, a finishing position of {highestPosition} has already been captured for this event." });
+            }
+        }
+
         enrolment.Status = status;
         await _context.SaveChangesAsync();
 
