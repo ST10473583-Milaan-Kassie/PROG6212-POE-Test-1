@@ -120,6 +120,21 @@ public class CategoriesController : ControllerBase
             return ageError;
         }
 
+        //everyone already enrolled in this category has to still fit the new range on the event date
+        var enrolledBirthDates = await _context.Enrolments
+            .Where(en => en.CategoryID == category.CategoryID)
+            .Select(en => en.User.DateOfBirth)
+            .ToListAsync();
+
+        var outsideRange = enrolledBirthDates.Count(dob =>
+            !AgeHelper.IsAgeEligible(dob, category.Event.EventDate, request.MinAge!.Value, request.MaxAge));
+
+        if (outsideRange > 0)
+        {
+            var participants = outsideRange == 1 ? "participant" : "participants";
+            return Conflict(new { message = $"This change would leave {outsideRange} enrolled {participants} outside their category's age range." });
+        }
+
         category.CategoryName = request.CategoryName.Trim();
         category.MinAge = request.MinAge!.Value;
         category.MaxAge = request.MaxAge;

@@ -225,6 +225,31 @@ public class EventsController : ControllerBase
             return BadRequest(new { message = "Event type does not exist." });
         }
 
+        //moving the date changes everyones age on race day, so enrolled participants have to still fit their category
+        //skipped completely if the date isnt changing
+        var newEventDate = request.EventDate!.Value;
+        if (newEventDate != ev.EventDate)
+        {
+            var enrolments = await _context.Enrolments
+                .Where(en => en.EventID == ev.EventID)
+                .Select(en => new
+                {
+                    en.User.DateOfBirth,
+                    en.Category.MinAge,
+                    en.Category.MaxAge
+                })
+                .ToListAsync();
+
+            var outsideRange = enrolments.Count(en =>
+                !AgeHelper.IsAgeEligible(en.DateOfBirth, newEventDate, en.MinAge, en.MaxAge));
+
+            if (outsideRange > 0)
+            {
+                var participants = outsideRange == 1 ? "participant" : "participants";
+                return Conflict(new { message = $"This change would leave {outsideRange} enrolled {participants} outside their category's age range." });
+            }
+        }
+
         ev.EventName = request.EventName.Trim();
 
         //setting the type itself keeps the id and the name in the response in sync

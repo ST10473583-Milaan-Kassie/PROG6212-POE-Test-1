@@ -16,4 +16,14 @@ public static class AgeHelper
 
         return age;
     }
+
+    //checks if someone fits a category's age range on the event date
+    //used when enrolling and when a category or event date changes, so its always worked out the same way
+    public static bool IsAgeEligible(DateOnly dateOfBirth, DateOnly eventDate, int minAge, int? maxAge)
+    {
+        var age = GetAgeOn(dateOfBirth, eventDate);
+
+        //no max age means anyone at or above the min age fits
+        return age >= minAge && (maxAge == null || age <= maxAge.Value);
+    }
 }
