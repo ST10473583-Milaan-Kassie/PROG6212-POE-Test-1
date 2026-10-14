@@ -34,4 +34,7 @@ public class User
 
     //the events this user has created, only organisers will have any
     public ICollection<Event> Events { get; set; } = new List<Event>();
+
+    //the events this user has enrolled in, only participants will have any
+    public ICollection<Enrolment> Enrolments { get; set; } = new List<Enrolment>();
 }

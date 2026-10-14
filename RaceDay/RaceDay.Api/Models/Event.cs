@@ -37,4 +37,7 @@ public class Event
 
     //all the categories that belong to this event
     public ICollection<Category> Categories { get; set; } = new List<Category>();
+
+    //all the enrolments for this event
+    public ICollection<Enrolment> Enrolments { get; set; } = new List<Enrolment>();
 }

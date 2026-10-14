@@ -19,4 +19,7 @@ public class Category
 
     //the event this category belongs to
     public Event Event { get; set; } = null!;
+
+    //all the enrolments for this category
+    public ICollection<Enrolment> Enrolments { get; set; } = new List<Enrolment>();
 }
