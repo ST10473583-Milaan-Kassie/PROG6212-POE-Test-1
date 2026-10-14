@@ -204,7 +204,7 @@ public class EventsController : ControllerBase
         //organisers can only change their own events
         if (ev.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ForbiddenResponse("You can only manage your own events.");
+            return ApiResponses.Forbidden("You can only manage your own events.");
         }
 
         //once race day comes the event is locked
@@ -258,7 +258,7 @@ public class EventsController : ControllerBase
 
         if (ev.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ForbiddenResponse("You can only manage your own events.");
+            return ApiResponses.Forbidden("You can only manage your own events.");
         }
 
         //events that have taken place are kept as history
@@ -303,14 +303,5 @@ public class EventsController : ControllerBase
         }
 
         return null;
-    }
-
-    //403 built by hand, same reason as in the role filter
-    private ObjectResult ForbiddenResponse(string message)
-    {
-        return new ObjectResult(new { message })
-        {
-            StatusCode = StatusCodes.Status403Forbidden
-        };
     }
 }
