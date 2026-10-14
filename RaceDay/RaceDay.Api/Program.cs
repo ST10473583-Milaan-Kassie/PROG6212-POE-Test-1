@@ -13,6 +13,27 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<RaceDayDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("RaceDayConnection")));
 
+//session data gets kept in the server's memory, the browser only gets a cookie with the session id
+builder.Services.AddDistributedMemoryCache();
+
+//server side sessions, keeps the logged in user's id and role between requests
+builder.Services.AddSession(options =>
+{
+    options.Cookie.Name = "RaceDay.Session";
+
+    //javascript cant read the cookie
+    options.Cookie.HttpOnly = true;
+
+    //cookie only gets sent over https
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
+    //the session cookie is needed for the api to work so its always allowed
+    options.Cookie.IsEssential = true;
+
+    //logs the user out after 30 minutes of doing nothing
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+});
+
 var app = builder.Build();
 
 //swagger ui is only switched on while developing
@@ -24,6 +45,9 @@ if (app.Environment.IsDevelopment())
 
 //redirects any http requests to https
 app.UseHttpsRedirection();
+
+//loads the session for each request, has to come before the controllers are mapped
+app.UseSession();
 
 //maps each controller route to its endpoint
 app.MapControllers();
