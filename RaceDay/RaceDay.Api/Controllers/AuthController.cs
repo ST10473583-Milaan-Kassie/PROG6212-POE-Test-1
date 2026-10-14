@@ -46,6 +46,25 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Date of birth must be in the past." });
         }
 
+        //age limits, worked out on todays date in south africa
+        //dob cant be changed later so a wrong one gets caught here
+        var age = AgeHelper.GetAgeOn(dateOfBirth, _clock.Today);
+
+        if (age >= AgeLimits.MaximumAge)
+        {
+            return BadRequest(new { message = $"Please enter a valid date of birth. Users must be younger than {AgeLimits.MaximumAge} years old." });
+        }
+
+        if (roleName == RoleNames.Organiser && age < AgeLimits.MinimumOrganiserAge)
+        {
+            return BadRequest(new { message = $"Organisers must be at least {AgeLimits.MinimumOrganiserAge} years old." });
+        }
+
+        if (roleName == RoleNames.Participant && age < AgeLimits.MinimumParticipantAge)
+        {
+            return BadRequest(new { message = $"Participants must be at least {AgeLimits.MinimumParticipantAge} years old." });
+        }
+
         //emails get stored lowercase so the same email cant sign up twice with different casing
         var email = request.Email.Trim().ToLowerInvariant();
         if (await _context.Users.AnyAsync(u => u.Email == email))
