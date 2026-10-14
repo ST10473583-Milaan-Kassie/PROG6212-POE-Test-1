@@ -9,4 +9,7 @@ public static class SessionKeys
 
     //either organiser or participant
     public const string RoleName = "RoleName";
+
+    //the name of the session cookie, used in Program.cs and when logging out
+    public const string CookieName = "RaceDay.Session";
 }

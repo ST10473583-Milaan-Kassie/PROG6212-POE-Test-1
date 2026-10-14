@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
 using RaceDay.Api.Dtos;
+using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
 
@@ -66,18 +67,48 @@ public class AuthController : ControllerBase
         await _context.SaveChangesAsync();
 
         //userid gets filled in by the database once its saved
-        var response = new UserResponse
-        {
-            UserID = user.UserID,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            DateOfBirth = user.DateOfBirth,
-            Email = user.Email,
-            PhoneNumber = user.PhoneNumber,
-            RoleName = role.RoleName,
-            ProfileImageURL = user.ProfileImageURL
-        };
+        return StatusCode(StatusCodes.Status201Created, UserResponse.FromUser(user, role.RoleName));
+    }
 
-        return StatusCode(StatusCodes.Status201Created, response);
+    //POST /api/auth/login
+    //checks the email and password, then starts the session
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(LoginRequest request)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+
+        //role gets loaded too so it can go into the session
+        var user = await _context.Users
+            .Include(u => u.Role)
+            .SingleOrDefaultAsync(u => u.Email == email);
+
+        //same message whether the email or the password is wrong, so it doesnt give away which emails have accounts
+        if (user == null || !PasswordHelper.VerifyPassword(request.Password, user.PasswordHash))
+        {
+            return Unauthorized(new { message = "Invalid email or password." });
+        }
+
+        //clears anything left over from a previous login before storing the new user
+        await HttpContext.Session.LoadAsync();
+        HttpContext.Session.Clear();
+
+        //server side session, only the session id goes to the browser in the cookie
+        HttpContext.Session.SetInt32(SessionKeys.UserID, user.UserID);
+        HttpContext.Session.SetString(SessionKeys.RoleName, user.Role.RoleName);
+
+        return Ok(UserResponse.FromUser(user, user.Role.RoleName));
+    }
+
+    //POST /api/auth/logout
+    //ends the session, any logged in user can do this
+    [HttpPost("logout")]
+    [SessionAuthorize]
+    public IActionResult Logout()
+    {
+        //wipes the user from the session on the server and removes the cookie from the browser
+        HttpContext.Session.Clear();
+        Response.Cookies.Delete(SessionKeys.CookieName);
+
+        return Ok(new { message = "Logged out successfully." });
     }
 }

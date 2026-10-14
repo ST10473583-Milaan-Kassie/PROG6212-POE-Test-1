@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
+using RaceDay.Api.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,7 +39,7 @@ builder.Services.AddDistributedMemoryCache();
 //server side sessions, keeps the logged in user's id and role between requests
 builder.Services.AddSession(options =>
 {
-    options.Cookie.Name = "RaceDay.Session";
+    options.Cookie.Name = SessionKeys.CookieName;
 
     //javascript cant read the cookie
     options.Cookie.HttpOnly = true;
