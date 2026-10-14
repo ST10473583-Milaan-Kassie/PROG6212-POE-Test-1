@@ -1,4 +1,5 @@
-﻿using RaceDay.Api.Models;
+﻿using System.Text.Json.Serialization;
+using RaceDay.Api.Models;
 
 namespace RaceDay.Api.Dtos;
 
@@ -23,6 +24,10 @@ public class EventResponse
 
     //worked out with the south african clock, race day counts as taken place
     public bool HasTakenPlace { get; set; }
+
+    //only filled in for GET /api/events/mine, left out of the json everywhere else
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? TotalEnrolments { get; set; }
 
     //builds the response from an event, the eventtype and user have to be loaded first
     public static EventResponse FromEvent(Event ev, bool hasTakenPlace)
