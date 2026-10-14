@@ -9,8 +9,7 @@ using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers;
 
-//enrolments, the participant endpoints are in here for now
-//the organiser endpoints get added in the next commit
+//enrolments, participants enrol and withdraw, organisers view and confirm them
 //no route on the class, the endpoints sit under both /api/events and /api/enrolments like the plan
 [ApiController]
 public class EnrolmentsController : ControllerBase
@@ -136,5 +135,101 @@ public class EnrolmentsController : ControllerBase
             .ToListAsync();
 
         return Ok(enrolments.Select(en => EnrolmentResponse.FromEnrolment(en, _clock.HasTakenPlace(en.Event.EventDate))));
+    }
+
+    //GET /api/events/{eventId}/enrolments
+    //all enrolments for the logged in organisers own event, can be filtered by category
+    [HttpGet("api/events/{eventId:int}/enrolments")]
+    [SessionAuthorize(RoleNames.Organiser)]
+    public async Task<IActionResult> GetEventEnrolments(int eventId, [FromQuery] int? categoryID)
+    {
+        var ev = await _context.Events.FindAsync(eventId);
+
+        if (ev == null)
+        {
+            return NotFound(new { message = "Event not found." });
+        }
+
+        //organisers can only see enrolments for their own events
+        if (ev.UserID != HttpContext.Session.GetCurrentUserID())
+        {
+            return ApiResponses.Forbidden("You can only view enrolments for your own events.");
+        }
+
+        //filtering by a category from a different event is a mistake, not just an empty list
+        if (categoryID.HasValue &&
+            !await _context.Categories.AnyAsync(c => c.CategoryID == categoryID.Value && c.EventID == eventId))
+        {
+            return NotFound(new { message = "Category not found in this event." });
+        }
+
+        //participant, category and result get loaded for the response
+        IQueryable<Enrolment> query = _context.Enrolments
+            .Include(en => en.User)
+            .Include(en => en.Category)
+            .Include(en => en.Result)
+            .Where(en => en.EventID == eventId);
+
+        if (categoryID.HasValue)
+        {
+            query = query.Where(en => en.CategoryID == categoryID.Value);
+        }
+
+        //grouped by category, youngest category first, then by surname
+        var enrolments = await query
+            .OrderBy(en => en.Category.MinAge)
+            .ThenBy(en => en.Category.CategoryName)
+            .ThenBy(en => en.User.LastName)
+            .ThenBy(en => en.User.FirstName)
+            .ToListAsync();
+
+        return Ok(enrolments.Select(EventEnrolmentResponse.FromEnrolment));
+    }
+
+    //PUT /api/enrolments/{id}/status
+    //sets an enrolment on the logged in organisers own event to pending or confirmed
+    [HttpPut("api/enrolments/{id:int}/status")]
+    [SessionAuthorize(RoleNames.Organiser)]
+    public async Task<IActionResult> UpdateEnrolmentStatus(int id, UpdateEnrolmentStatusRequest request)
+    {
+        //the event is loaded to check the owner, the rest is for the response and the result check
+        var enrolment = await _context.Enrolments
+            .Include(en => en.Event)
+            .Include(en => en.User)
+            .Include(en => en.Category)
+            .Include(en => en.Result)
+            .SingleOrDefaultAsync(en => en.EnrolmentID == id);
+
+        if (enrolment == null)
+        {
+            return NotFound(new { message = "Enrolment not found." });
+        }
+
+        if (enrolment.Event.UserID != HttpContext.Session.GetCurrentUserID())
+        {
+            return ApiResponses.Forbidden("You can only manage enrolments for your own events.");
+        }
+
+        //once a result is captured the status is locked
+        //not blocked on race day though, so organisers can still confirm people as they check in
+        if (enrolment.Result != null)
+        {
+            return Conflict(new { message = "A result has already been captured for this enrolment, so its status can no longer be changed." });
+        }
+
+        //only pending or confirmed, any casing works but it gets stored the proper way to match CK_Enrolments_Status
+        var validStatuses = new[] { EnrolmentStatuses.Pending, EnrolmentStatuses.Confirmed };
+        var status = validStatuses.FirstOrDefault(s =>
+            string.Equals(s, request.Status.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        if (status == null)
+        {
+            return BadRequest(new { message = "Status must be either Pending or Confirmed." });
+        }
+
+        enrolment.Status = status;
+        await _context.SaveChangesAsync();
+
+        return Ok(EventEnrolmentResponse.FromEnrolment(enrolment));
     }
 }
