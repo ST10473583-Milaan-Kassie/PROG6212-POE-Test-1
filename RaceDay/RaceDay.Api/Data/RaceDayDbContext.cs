@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using RaceDay.Api.Models;
 
 namespace RaceDay.Api.Data;
@@ -21,6 +22,12 @@ public class RaceDayDbContext : DbContext
     public DbSet<Enrolment> Enrolments => Set<Enrolment>();
     public DbSet<Result> Results => Set<Result>();
 
+    //ef normally adds an index to every fk column, the sql script doesnt have any so this turns that off
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Conventions.Remove(typeof(ForeignKeyIndexConvention));
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -34,6 +41,10 @@ public class RaceDayDbContext : DbContext
             entity.HasKey(r => r.RoleID);
 
             entity.Property(r => r.RoleName).HasMaxLength(50);
+
+            //no two roles can have the same name
+            entity.HasAlternateKey(r => r.RoleName)
+                .HasName("UQ_Roles_RoleName");
         });
 
         //users table
@@ -49,6 +60,11 @@ public class RaceDayDbContext : DbContext
             entity.Property(u => u.PhoneNumber).HasMaxLength(20);
             entity.Property(u => u.PasswordHash).HasMaxLength(255);
             entity.Property(u => u.ProfileImageURL).HasMaxLength(255);
+
+            //emails are used to log in, must be unique
+            //cant be changed after registering, the profile update only touches name and phone anyway
+            entity.HasAlternateKey(u => u.Email)
+                .HasName("UQ_Users_Email");
 
             //each user has one role, a role has many users
             //noaction so nothing cascades, same as the sql
@@ -66,6 +82,10 @@ public class RaceDayDbContext : DbContext
             entity.HasKey(et => et.EventTypeID);
 
             entity.Property(et => et.EventTypeName).HasMaxLength(20);
+
+            //no duplicate event types
+            entity.HasAlternateKey(et => et.EventTypeName)
+                .HasName("UQ_EventType_EventTypeName");
         });
 
         //events table
@@ -101,7 +121,9 @@ public class RaceDayDbContext : DbContext
         //categories table
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.ToTable("Categories");
+            //ensures the max age is not lower than the min age
+            entity.ToTable("Categories", t => t.HasCheckConstraint(
+                "CK_Categories_AgeRange", "MaxAge IS NULL OR MaxAge >= MinAge"));
             entity.HasKey(c => c.CategoryID);
 
             entity.Property(c => c.CategoryName).HasMaxLength(50);
@@ -122,10 +144,19 @@ public class RaceDayDbContext : DbContext
         //enrolments table
         modelBuilder.Entity<Enrolment>(entity =>
         {
-            entity.ToTable("Enrolments");
+            //only allows pending or confirmed statuses
+            entity.ToTable("Enrolments", t => t.HasCheckConstraint(
+                "CK_Enrolments_Status", "Status IN ('Pending', 'Confirmed')"));
             entity.HasKey(e => e.EnrolmentID);
 
-            entity.Property(e => e.Status).HasMaxLength(20);
+            //pending by default, same as the sql
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Pending");
+
+            //stops users from entering the same event twice
+            entity.HasAlternateKey(e => new { e.UserID, e.EventID })
+                .HasName("UQ_Enrolments_UserEvent");
 
             //the participant enrolling
             entity.HasOne(e => e.User)
@@ -158,6 +189,10 @@ public class RaceDayDbContext : DbContext
             entity.HasKey(r => r.ResultID);
 
             entity.Property(r => r.FinishTime).HasColumnType("time");
+
+            //prevents an enrolment from having multiple results
+            entity.HasAlternateKey(r => r.EnrolmentID)
+                .HasName("UQ_Results_Enrolment");
 
             //one result per enrolment, withone makes it one to one
             entity.HasOne(r => r.Enrolment)
