@@ -3,7 +3,7 @@
 //lookup table for the event type (run/walk/cycle)
 public class EventType
 {
-    //pk
+    //PK
     public int EventTypeID { get; set; }
 
     //called EventTypeName bcs a property cant have the same name as its class
