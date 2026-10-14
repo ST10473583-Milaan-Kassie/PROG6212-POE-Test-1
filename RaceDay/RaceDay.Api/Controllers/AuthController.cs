@@ -5,6 +5,7 @@ using RaceDay.Api.Dtos;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
+using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers;
 
@@ -14,11 +15,13 @@ namespace RaceDay.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly RaceDayDbContext _context;
+    private readonly ISouthAfricanClock _clock;
 
-    //the dbcontext gets passed in automatically bcs its registered in Program.cs
-    public AuthController(RaceDayDbContext context)
+    //the dbcontext and clock get passed in automatically bcs theyre registered in Program.cs
+    public AuthController(RaceDayDbContext context, ISouthAfricanClock clock)
     {
         _context = context;
+        _clock = clock;
     }
 
     //POST /api/auth/register
@@ -36,9 +39,9 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Role name must be either Organiser or Participant." });
         }
 
-        //dob has to be before today
+        //dob has to be before today in south africa
         var dateOfBirth = request.DateOfBirth!.Value;
-        if (dateOfBirth >= DateOnly.FromDateTime(DateTime.UtcNow))
+        if (dateOfBirth >= _clock.Today)
         {
             return BadRequest(new { message = "Date of birth must be in the past." });
         }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
 using RaceDay.Api.Helpers;
+using RaceDay.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,11 @@ builder.Services.AddSwaggerGen();
 //registers the dbcontext, the connection string comes from appsettings.json
 builder.Services.AddDbContext<RaceDayDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("RaceDayConnection")));
+
+//the real system clock, and the south african clock that uses it
+//singletons bcs one copy is shared by the whole app
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ISouthAfricanClock, SouthAfricanClock>();
 
 //session data gets kept in the server's memory, the browser only gets a cookie with the session id
 builder.Services.AddDistributedMemoryCache();
