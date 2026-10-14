@@ -1,10 +1,29 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //registers the controllers so the api can find the endpoints
-builder.Services.AddControllers();
+//validation errors come back in the same { message } shape as every other error, with each field's errors listed underneath
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(entry => entry.Value != null && entry.Value.Errors.Count > 0)
+                .ToDictionary(
+                    entry => entry.Key,
+                    entry => entry.Value!.Errors.Select(error => error.ErrorMessage).ToArray());
+
+            return new BadRequestObjectResult(new
+            {
+                message = "The request contains invalid details.",
+                errors
+            });
+        };
+    });
 
 //registers swagger so every endpoint can be viewed and tested in the browser
 builder.Services.AddSwaggerGen();
