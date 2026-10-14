@@ -281,10 +281,11 @@ public class EventsController : ControllerBase
     //checks the parts of an event request that the annotations cant, used by create and update
     private BadRequestObjectResult? ValidateEventDetails(EventRequest request)
     {
-        //events cant be created or updated with a date in the past
-        if (request.EventDate!.Value < _clock.Today)
+        //events have to be after today, tomorrow at the earliest
+        //race day counts as taken place so an event dated today would be locked straight away
+        if (request.EventDate!.Value <= _clock.Today)
         {
-            return BadRequest(new { message = "Event date cannot be in the past." });
+            return BadRequest(new { message = "Event date must be after today." });
         }
 
         var distance = request.Distance!.Value;
