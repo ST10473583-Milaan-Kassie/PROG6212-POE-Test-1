@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RaceDay.Api.Dtos;
+namespace RaceDay.Api.DTOs;
 
 //the image sent for a profile picture or event banner, sent as multipart/form-data
 //wrapped in a class so swagger shows a file picker for it

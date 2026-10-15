@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RaceDay.Api.Controllers;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Tests.Helpers;
 
@@ -210,14 +210,14 @@ public class AuthControllerTests
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
 
-        var result = await controller.Login(new LoginRequest { Email = AlucardEmail, Password = SeedIds.Password });
+        var result = await controller.Login(new LoginRequest { Email = AlucardEmail, Password = SeedIDs.Password });
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<UserResponse>(ok.Value);
-        Assert.Equal(SeedIds.Alucard, response.UserID);
+        Assert.Equal(SeedIDs.Alucard, response.UserID);
 
-        //the session now holds alucards id and role, the two things the role filter reads
-        Assert.Equal(SeedIds.Alucard, controller.HttpContext.Session.GetInt32(SessionKeys.UserID));
+        //the session now holds alucards ID and role, the two things the role filter reads
+        Assert.Equal(SeedIDs.Alucard, controller.HttpContext.Session.GetInt32(SessionKeys.UserID));
         Assert.Equal(RoleNames.Participant, controller.HttpContext.Session.GetString(SessionKeys.RoleName));
     }
 
@@ -227,7 +227,7 @@ public class AuthControllerTests
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
 
-        var result = await controller.Login(new LoginRequest { Email = "FloatingSword@Gmail.com", Password = SeedIds.Password });
+        var result = await controller.Login(new LoginRequest { Email = "FloatingSword@Gmail.com", Password = SeedIDs.Password });
 
         Assert.Equal(StatusCodes.Status200OK, ResultHelper.GetStatusCode(result));
     }
@@ -253,7 +253,7 @@ public class AuthControllerTests
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
 
-        var result = await controller.Login(new LoginRequest { Email = "nobody@gmail.com", Password = SeedIds.Password });
+        var result = await controller.Login(new LoginRequest { Email = "nobody@gmail.com", Password = SeedIDs.Password });
 
         //same message as a wrong password, so it doesnt give away which emails have accounts
         Assert.Equal(StatusCodes.Status401Unauthorized, ResultHelper.GetStatusCode(result));
@@ -266,11 +266,11 @@ public class AuthControllerTests
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
 
-        await controller.Login(new LoginRequest { Email = TrevorEmail, Password = SeedIds.Password });
-        await controller.Login(new LoginRequest { Email = AlucardEmail, Password = SeedIds.Password });
+        await controller.Login(new LoginRequest { Email = TrevorEmail, Password = SeedIDs.Password });
+        await controller.Login(new LoginRequest { Email = AlucardEmail, Password = SeedIDs.Password });
 
         //trevor is gone from the session, only alucard is left
-        Assert.Equal(SeedIds.Alucard, controller.HttpContext.Session.GetInt32(SessionKeys.UserID));
+        Assert.Equal(SeedIDs.Alucard, controller.HttpContext.Session.GetInt32(SessionKeys.UserID));
         Assert.Equal(RoleNames.Participant, controller.HttpContext.Session.GetString(SessionKeys.RoleName));
     }
 
@@ -281,7 +281,7 @@ public class AuthControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Alucard, RoleNames.Participant);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Alucard, RoleNames.Participant);
 
         var result = controller.Logout();
 

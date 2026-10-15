@@ -1,6 +1,6 @@
 ﻿using RaceDay.Api.Models;
 
-namespace RaceDay.Api.Dtos;
+namespace RaceDay.Api.DTOs;
 
 //what an organiser sees about each result for their event
 public class EventResultResponse

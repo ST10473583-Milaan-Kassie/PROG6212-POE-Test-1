@@ -1,7 +1,7 @@
 ﻿namespace RaceDay.Api.Helpers;
 
-//shortcut for getting the logged in user's id out of the session
-//only used on endpoints with [SessionAuthorize], the filter already checked the id is there
+//shortcut for getting the logged in user's ID out of the session
+//only used on endpoints with [SessionAuthorize], the filter already checked the ID is there
 public static class CurrentUserExtensions
 {
     public static int GetCurrentUserID(this ISession session)

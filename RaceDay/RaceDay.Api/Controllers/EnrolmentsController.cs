@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
@@ -34,7 +34,7 @@ public class EnrolmentsController : ControllerBase
     /// Categories with only a distance are open to every participant.
     /// Each participant can enrol only once per event. New enrolments start as Pending until the Organiser confirms them.
     /// </remarks>
-    /// <param name="eventId">The event's ID.</param>
+    /// <param name="eventID">The event's ID.</param>
     /// <param name="request">The ID of the category to enrol under.</param>
     /// <response code="201">The enrolment was recorded.</response>
     /// <response code="400">The event has already taken place, the category is not part of the event, or the participant's age is outside the category's age range.</response>
@@ -48,13 +48,13 @@ public class EnrolmentsController : ControllerBase
     [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
-    //POST /api/events/{eventId}/enrolments
+    //POST /api/events/{eventID}/enrolments
     //enters the logged in participant into an upcoming event under the category they picked
-    [HttpPost("api/events/{eventId:int}/enrolments")]
+    [HttpPost("api/events/{eventID:int}/enrolments")]
     [SessionAuthorize(RoleNames.Participant)]
-    public async Task<IActionResult> Enrol(int eventId, EnrolmentRequest request)
+    public async Task<IActionResult> Enrol(int eventID, EnrolmentRequest request)
     {
-        var ev = await _context.Events.FindAsync(eventId);
+        var ev = await _context.Events.FindAsync(eventID);
 
         if (ev == null)
         {
@@ -67,26 +67,26 @@ public class EnrolmentsController : ControllerBase
             return BadRequest(new { message = "This event has already taken place, so it can no longer be entered." });
         }
 
-        //the category has to belong to this event, an id from a different event counts as not part of it
+        //the category has to belong to this event, an ID from a different event counts as not part of it
         var category = await _context.Categories
-            .SingleOrDefaultAsync(c => c.CategoryID == request.CategoryID!.Value && c.EventID == eventId);
+            .SingleOrDefaultAsync(c => c.CategoryID == request.CategoryID!.Value && c.EventID == eventID);
 
         if (category == null)
         {
             return BadRequest(new { message = "The selected category is not part of this event." });
         }
 
-        var userId = HttpContext.Session.GetCurrentUserID();
+        var userID = HttpContext.Session.GetCurrentUserID();
 
         //only once per event, UQ_Enrolments_UserEvent backs this up in the database
-        if (await _context.Enrolments.AnyAsync(en => en.UserID == userId && en.EventID == eventId))
+        if (await _context.Enrolments.AnyAsync(en => en.UserID == userID && en.EventID == eventID))
         {
             return Conflict(new { message = "You are already enrolled in this event." });
         }
 
         //age gets checked on race day, not today
         //distance only categories have no age range so everyone passes this
-        var user = await _context.Users.SingleAsync(u => u.UserID == userId);
+        var user = await _context.Users.SingleAsync(u => u.UserID == userID);
         if (!AgeHelper.IsAgeEligible(user.DateOfBirth, ev.EventDate, category.MinAge, category.MaxAge))
         {
             var ageOnEventDate = AgeHelper.GetAgeOn(user.DateOfBirth, ev.EventDate);
@@ -94,10 +94,10 @@ public class EnrolmentsController : ControllerBase
         }
 
         //new enrolments always start as pending, the organiser confirms them
-        //setting the event and category sets eventid and categoryid too
+        //setting the event and category sets EventID and CategoryID too
         var enrolment = new Enrolment
         {
-            UserID = userId,
+            UserID = userID,
             Event = ev,
             Category = category,
             Status = EnrolmentStatuses.Pending
@@ -146,7 +146,7 @@ public class EnrolmentsController : ControllerBase
         //participants can only withdraw their own enrolments
         if (enrolment.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only withdraw your own enrolments.");
+            return APIResponses.Forbidden("You can only withdraw your own enrolments.");
         }
 
         //enrolments for events that have taken place are kept as history
@@ -180,12 +180,12 @@ public class EnrolmentsController : ControllerBase
     [SessionAuthorize(RoleNames.Participant)]
     public async Task<IActionResult> GetMyEnrolments()
     {
-        var userId = HttpContext.Session.GetCurrentUserID();
+        var userID = HttpContext.Session.GetCurrentUserID();
 
         var enrolments = await _context.Enrolments
             .Include(en => en.Event)
             .Include(en => en.Category)
-            .Where(en => en.UserID == userId)
+            .Where(en => en.UserID == userID)
             .OrderBy(en => en.Event.EventDate)
             .ThenBy(en => en.EnrolmentID)
             .ToListAsync();
@@ -199,7 +199,7 @@ public class EnrolmentsController : ControllerBase
     /// <remarks>
     /// Organisers only, and only for their own events. Only each participant's name is returned, not their contact details or date of birth.
     /// </remarks>
-    /// <param name="eventId">The event's ID.</param>
+    /// <param name="eventID">The event's ID.</param>
     /// <param name="categoryID">Optional. Only show enrolments in this category.</param>
     /// <response code="200">The event's enrolments, grouped by category.</response>
     /// <response code="401">Nobody is logged in.</response>
@@ -209,13 +209,13 @@ public class EnrolmentsController : ControllerBase
     [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
-    //GET /api/events/{eventId}/enrolments
+    //GET /api/events/{eventID}/enrolments
     //all enrolments for the logged in organisers own event, can be filtered by category
-    [HttpGet("api/events/{eventId:int}/enrolments")]
+    [HttpGet("api/events/{eventID:int}/enrolments")]
     [SessionAuthorize(RoleNames.Organiser)]
-    public async Task<IActionResult> GetEventEnrolments(int eventId, [FromQuery] int? categoryID)
+    public async Task<IActionResult> GetEventEnrolments(int eventID, [FromQuery] int? categoryID)
     {
-        var ev = await _context.Events.FindAsync(eventId);
+        var ev = await _context.Events.FindAsync(eventID);
 
         if (ev == null)
         {
@@ -225,12 +225,12 @@ public class EnrolmentsController : ControllerBase
         //organisers can only see enrolments for their own events
         if (ev.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only view enrolments for your own events.");
+            return APIResponses.Forbidden("You can only view enrolments for your own events.");
         }
 
         //filtering by a category from a different event is a mistake, not just an empty list
         if (categoryID.HasValue &&
-            !await _context.Categories.AnyAsync(c => c.CategoryID == categoryID.Value && c.EventID == eventId))
+            !await _context.Categories.AnyAsync(c => c.CategoryID == categoryID.Value && c.EventID == eventID))
         {
             return NotFound(new { message = "Category not found in this event." });
         }
@@ -240,7 +240,7 @@ public class EnrolmentsController : ControllerBase
             .Include(en => en.User)
             .Include(en => en.Category)
             .Include(en => en.Result)
-            .Where(en => en.EventID == eventId);
+            .Where(en => en.EventID == eventID);
 
         if (categoryID.HasValue)
         {
@@ -301,7 +301,7 @@ public class EnrolmentsController : ControllerBase
 
         if (enrolment.Event.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only manage enrolments for your own events.");
+            return APIResponses.Forbidden("You can only manage enrolments for your own events.");
         }
 
         //once a result is captured the status is locked

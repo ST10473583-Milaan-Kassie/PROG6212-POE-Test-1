@@ -18,10 +18,10 @@ public static class ControllerTestHelper
         return session;
     }
 
-    //logs in by putting the users id and role in the session, the same two values login stores
-    public static void LogInAs(ControllerBase controller, int userId, string roleName)
+    //logs in by putting the users ID and role in the session, the same two values login stores
+    public static void LogInAs(ControllerBase controller, int userID, string roleName)
     {
-        controller.HttpContext.Session.SetInt32(SessionKeys.UserID, userId);
+        controller.HttpContext.Session.SetInt32(SessionKeys.UserID, userID);
         controller.HttpContext.Session.SetString(SessionKeys.RoleName, roleName);
     }
 }

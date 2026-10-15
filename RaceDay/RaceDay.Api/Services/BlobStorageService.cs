@@ -20,7 +20,7 @@ public class BlobStorageService : IFileStorageService
 
     public async Task<string> UploadAsync(IFormFile file, string folder)
     {
-        //makes the container the first time, blob access lets the front end show images straight from their url
+        //makes the container the first time, blob access lets the front end show images straight from their URL
         await _container.CreateIfNotExistsAsync(PublicAccessType.Blob);
 
         //new random name every upload so files never overwrite each other
@@ -37,10 +37,10 @@ public class BlobStorageService : IFileStorageService
         return blob.Uri.ToString();
     }
 
-    public async Task DeleteAsync(string fileUrl)
+    public async Task DeleteAsync(string fileURL)
     {
-        //works out the container and file name from the url
-        var blobUri = new BlobUriBuilder(new Uri(fileUrl));
+        //works out the container and file name from the URL
+        var blobUri = new BlobUriBuilder(new Uri(fileURL));
 
         //only ever deletes from our own container
         if (blobUri.BlobContainerName != ContainerName)

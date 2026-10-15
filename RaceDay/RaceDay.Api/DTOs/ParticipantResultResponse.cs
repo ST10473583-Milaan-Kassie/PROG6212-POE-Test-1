@@ -1,6 +1,6 @@
 ﻿using RaceDay.Api.Models;
 
-namespace RaceDay.Api.Dtos;
+namespace RaceDay.Api.DTOs;
 
 //what a participant sees about one of their own results
 //total finishers lets the front end show e.g. 47th out of 312 finishers

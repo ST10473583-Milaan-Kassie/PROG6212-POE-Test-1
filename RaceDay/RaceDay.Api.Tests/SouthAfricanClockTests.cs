@@ -3,15 +3,15 @@ using RaceDay.Api.Tests.Helpers;
 
 namespace RaceDay.Api.Tests;
 
-//tests for the south african clock that every date rule in the api goes through
+//tests for the south african clock that every date rule in the API goes through
 public class SouthAfricanClockTests
 {
     [Fact]
     public void Today_UsesSouthAfricanDate_NotUtcDate()
     {
-        //23:30 utc on 14 october is already 01:30 on 15 october in south africa
-        var lateNightUtc = new DateTimeOffset(2026, 10, 14, 23, 30, 0, TimeSpan.Zero);
-        var clock = new SouthAfricanClock(new FixedTimeProvider(lateNightUtc));
+        //23:30 UTC on 14 october is already 01:30 on 15 october in south africa
+        var lateNightUTC = new DateTimeOffset(2026, 10, 14, 23, 30, 0, TimeSpan.Zero);
+        var clock = new SouthAfricanClock(new FixedTimeProvider(lateNightUTC));
 
         Assert.Equal(new DateOnly(2026, 10, 15), clock.Today);
     }

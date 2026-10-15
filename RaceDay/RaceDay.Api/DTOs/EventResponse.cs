@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using RaceDay.Api.Models;
 
-namespace RaceDay.Api.Dtos;
+namespace RaceDay.Api.DTOs;
 
 //what gets sent back about an event
 //includes the type name and organiser name so the front end doesnt have to look them up
@@ -25,7 +25,7 @@ public class EventResponse
     //worked out with the south african clock, race day counts as taken place
     public bool HasTakenPlace { get; set; }
 
-    //only filled in for GET /api/events/mine, left out of the json everywhere else
+    //only filled in for GET /api/events/mine, left out of the JSON everywhere else
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? TotalEnrolments { get; set; }
 

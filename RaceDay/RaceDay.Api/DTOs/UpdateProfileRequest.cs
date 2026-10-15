@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RaceDay.Api.Dtos;
+namespace RaceDay.Api.DTOs;
 
 //what the client sends to update their profile, matches the request body in the endpoint plan
 //no dateofbirth or email on purpose, neither can be changed through the profile

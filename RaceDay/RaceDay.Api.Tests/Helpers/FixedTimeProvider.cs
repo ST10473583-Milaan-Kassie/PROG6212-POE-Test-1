@@ -10,6 +10,6 @@ public class FixedTimeProvider : TimeProvider
         _utcNow = utcNow;
     }
 
-    //SouthAfricanClock only ever asks for the utc time, so this is all that needs faking
+    //SouthAfricanClock only ever asks for the UTC time, so this is all that needs faking
     public override DateTimeOffset GetUtcNow() => _utcNow;
 }

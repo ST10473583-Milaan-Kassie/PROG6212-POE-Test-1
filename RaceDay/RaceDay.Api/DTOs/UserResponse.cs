@@ -1,6 +1,6 @@
 ﻿using RaceDay.Api.Models;
 
-namespace RaceDay.Api.Dtos;
+namespace RaceDay.Api.DTOs;
 
 //what gets sent back about a user, leaves out the password hash
 //reused by register, login and the profile endpoints

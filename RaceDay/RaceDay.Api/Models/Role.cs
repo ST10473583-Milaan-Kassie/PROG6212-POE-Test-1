@@ -3,7 +3,7 @@
 //lookup table for the two roles, organiser and participant
 public class Role
 {
-    //PK, starts at 1 and goes up by 1 each time like the sql
+    //PK, starts at 1 and goes up by 1 each time like the SQL
     public int RoleID { get; set; }
 
     //either organiser or participant, cant be null

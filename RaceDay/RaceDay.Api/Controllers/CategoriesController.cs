@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
@@ -36,24 +36,24 @@ public class CategoriesController : ControllerBase
     /// and a distance of null means the category is not tied to a distance.
     /// Categories are returned by minimum age, with categories open to every age first, then by distance.
     /// </remarks>
-    /// <param name="eventId">The event's ID.</param>
+    /// <param name="eventID">The event's ID.</param>
     /// <response code="200">The event's categories.</response>
     /// <response code="404">No event has this ID.</response>
     [ProducesResponseType<IEnumerable<CategoryResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
-    //GET /api/events/{eventId}/categories
+    //GET /api/events/{eventID}/categories
     //lists an events categories, anyone can see them
-    [HttpGet("api/events/{eventId:int}/categories")]
-    public async Task<IActionResult> GetCategories(int eventId)
+    [HttpGet("api/events/{eventID:int}/categories")]
+    public async Task<IActionResult> GetCategories(int eventID)
     {
-        if (!await _context.Events.AnyAsync(ev => ev.EventID == eventId))
+        if (!await _context.Events.AnyAsync(ev => ev.EventID == eventID))
         {
             return NotFound(new { message = "Event not found." });
         }
 
         //youngest categories first, categories open to every age come first since their min age is null, then by distance
         var categories = await _context.Categories
-            .Where(c => c.EventID == eventId)
+            .Where(c => c.EventID == eventID)
             .OrderBy(c => c.MinAge)
             .ThenBy(c => c.Distance)
             .ThenBy(c => c.CategoryID)
@@ -71,7 +71,7 @@ public class CategoriesController : ControllerBase
     /// and the maximum age is optional, but when set it must be between the minimum age and 99. A maximum age cannot be sent without a minimum age.
     /// When a distance is used, it must be between 0.01 and 9999.99 km, with at most 2 decimal places, and cannot be longer than the event's distance.
     /// </remarks>
-    /// <param name="eventId">The event's ID.</param>
+    /// <param name="eventID">The event's ID.</param>
     /// <param name="request">The category's name, with an age range (minAge and optional maxAge), a distance, or both.</param>
     /// <response code="201">The category was added.</response>
     /// <response code="400">A field is missing, neither an age range nor a distance was sent, the ages break the age rules, or the distance is invalid or longer than the event's distance.</response>
@@ -85,13 +85,13 @@ public class CategoriesController : ControllerBase
     [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
-    //POST /api/events/{eventId}/categories
+    //POST /api/events/{eventID}/categories
     //adds a category to the logged in organisers own upcoming event
-    [HttpPost("api/events/{eventId:int}/categories")]
+    [HttpPost("api/events/{eventID:int}/categories")]
     [SessionAuthorize(RoleNames.Organiser)]
-    public async Task<IActionResult> AddCategory(int eventId, CategoryRequest request)
+    public async Task<IActionResult> AddCategory(int eventID, CategoryRequest request)
     {
-        var ev = await _context.Events.FindAsync(eventId);
+        var ev = await _context.Events.FindAsync(eventID);
 
         if (ev == null)
         {
@@ -101,7 +101,7 @@ public class CategoriesController : ControllerBase
         //organisers can only add categories to their own events
         if (ev.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only manage categories for your own events.");
+            return APIResponses.Forbidden("You can only manage categories for your own events.");
         }
 
         //once race day comes the categories are locked with the event
@@ -118,7 +118,7 @@ public class CategoriesController : ControllerBase
 
         var category = new Category
         {
-            EventID = eventId,
+            EventID = eventID,
             CategoryName = request.CategoryName.Trim(),
             MinAge = request.MinAge,
             MaxAge = request.MaxAge,
@@ -171,7 +171,7 @@ public class CategoriesController : ControllerBase
 
         if (category.Event.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only manage categories for your own events.");
+            return APIResponses.Forbidden("You can only manage categories for your own events.");
         }
 
         if (_clock.HasTakenPlace(category.Event.EventDate))
@@ -247,7 +247,7 @@ public class CategoriesController : ControllerBase
 
         if (category.Event.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only manage categories for your own events.");
+            return APIResponses.Forbidden("You can only manage categories for your own events.");
         }
 
         if (_clock.HasTakenPlace(category.Event.EventDate))

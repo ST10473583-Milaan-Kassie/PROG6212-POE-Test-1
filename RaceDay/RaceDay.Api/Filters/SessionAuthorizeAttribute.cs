@@ -25,11 +25,11 @@ public class SessionAuthorizeAttribute : Attribute, IAsyncAuthorizationFilter
         //loads the session data before reading from it
         await session.LoadAsync();
 
-        var userId = session.GetInt32(SessionKeys.UserID);
+        var userID = session.GetInt32(SessionKeys.UserID);
         var roleName = session.GetString(SessionKeys.RoleName);
 
         //nobody logged in, 401
-        if (userId == null || string.IsNullOrEmpty(roleName))
+        if (userID == null || string.IsNullOrEmpty(roleName))
         {
             context.Result = new UnauthorizedObjectResult(new
             {

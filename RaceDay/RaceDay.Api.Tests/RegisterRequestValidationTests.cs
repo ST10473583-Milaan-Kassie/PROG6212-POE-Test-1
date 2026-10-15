@@ -1,4 +1,4 @@
-﻿using RaceDay.Api.Dtos;
+﻿using RaceDay.Api.DTOs;
 using RaceDay.Api.Tests.Helpers;
 
 namespace RaceDay.Api.Tests;

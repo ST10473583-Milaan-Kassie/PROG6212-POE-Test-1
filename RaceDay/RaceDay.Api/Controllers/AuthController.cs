@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
@@ -107,7 +107,7 @@ public class AuthController : ControllerBase
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        //userid gets filled in by the database once its saved
+        //UserID gets filled in by the database once its saved
         return StatusCode(StatusCodes.Status201Created, UserResponse.FromUser(user, role.RoleName));
     }
 
@@ -148,7 +148,7 @@ public class AuthController : ControllerBase
         await HttpContext.Session.LoadAsync();
         HttpContext.Session.Clear();
 
-        //server side session, only the session id goes to the browser in the cookie
+        //server side session, only the session ID goes to the browser in the cookie
         HttpContext.Session.SetInt32(SessionKeys.UserID, user.UserID);
         HttpContext.Session.SetString(SessionKeys.RoleName, user.Role.RoleName);
 

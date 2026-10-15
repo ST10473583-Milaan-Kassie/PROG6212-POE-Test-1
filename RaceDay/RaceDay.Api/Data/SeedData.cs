@@ -3,8 +3,8 @@ using RaceDay.Api.Models;
 
 namespace RaceDay.Api.Data;
 
-//sample data, same rows as the inserts in the sql script
-//ids have to be set by hand for seeding, they match the order the sql inserts them in
+//sample data, same rows as the inserts in the SQL script
+//IDs have to be set by hand for seeding, they match the order the SQL inserts them in
 public static class SeedData
 {
     public static void Seed(ModelBuilder modelBuilder)
@@ -22,9 +22,9 @@ public static class SeedData
             new EventType { EventTypeID = 3, EventTypeName = "Cycle" }
         );
 
-        //users, 2 organisers (roleID 1) and 2 participants (roleID 2)
+        //users, 2 organisers (RoleID 1) and 2 participants (RoleID 2)
         //participant DOBs fit the age ranges of the categories they enrol in below
-        //same bcrypt hashes as the sql so the same passwords work
+        //same bcrypt hashes as the SQL so the same passwords work
         modelBuilder.Entity<User>().HasData(
             new User
             {
@@ -124,7 +124,7 @@ public static class SeedData
         );
 
         //enrolments, participants entering the events above
-        //eventid and categoryid have to line up since the category fk uses both
+        //EventID and CategoryID have to line up since the category fk uses both
         modelBuilder.Entity<Enrolment>().HasData(
             new Enrolment { EnrolmentID = 1, UserID = 3, EventID = 1, CategoryID = 1, Status = "Confirmed" },
             new Enrolment { EnrolmentID = 2, UserID = 4, EventID = 1, CategoryID = 2, Status = "Confirmed" },

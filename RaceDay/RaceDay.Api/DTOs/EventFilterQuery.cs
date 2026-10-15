@@ -1,4 +1,4 @@
-﻿namespace RaceDay.Api.Dtos;
+﻿namespace RaceDay.Api.DTOs;
 
 //the optional query parameters for GET /api/events, e.g. /api/events?eventTypeID=1&upcomingOnly=true
 //anything left out just doesnt get filtered on

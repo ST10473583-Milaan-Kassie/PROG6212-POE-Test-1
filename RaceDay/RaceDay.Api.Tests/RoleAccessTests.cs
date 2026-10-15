@@ -20,13 +20,13 @@ public class RoleAccessTests
 
     //runs a filter the same way aspnet does before an endpoint
     //gives back whatever the filter decided, null means it let the request through
-    private static async Task<IActionResult?> RunFilter(SessionAuthorizeAttribute filter, int? userId, string? roleName)
+    private static async Task<IActionResult?> RunFilter(SessionAuthorizeAttribute filter, int? userID, string? roleName)
     {
         var session = new FakeSession();
 
-        if (userId != null)
+        if (userID != null)
         {
-            session.SetInt32(SessionKeys.UserID, userId.Value);
+            session.SetInt32(SessionKeys.UserID, userID.Value);
         }
 
         if (roleName != null)
@@ -85,7 +85,7 @@ public class RoleAccessTests
         var filter = new SessionAuthorizeAttribute(RoleNames.Organiser);
 
         //alucard is a participant trying to get into an organiser endpoint
-        var result = await RunFilter(filter, SeedIds.Alucard, RoleNames.Participant);
+        var result = await RunFilter(filter, SeedIDs.Alucard, RoleNames.Participant);
 
         Assert.NotNull(result);
         Assert.Equal(StatusCodes.Status403Forbidden, ResultHelper.GetStatusCode(result));
@@ -97,19 +97,19 @@ public class RoleAccessTests
     {
         var filter = new SessionAuthorizeAttribute(RoleNames.Organiser);
 
-        var result = await RunFilter(filter, SeedIds.Trevor, RoleNames.Organiser);
+        var result = await RunFilter(filter, SeedIDs.Trevor, RoleNames.Organiser);
 
         Assert.Null(result);
     }
 
     [Theory]
-    [InlineData(SeedIds.Trevor, RoleNames.Organiser)]
-    [InlineData(SeedIds.Alucard, RoleNames.Participant)]
-    public async Task Filter_NoRoleGiven_LetsAnyLoggedInUserThrough(int userId, string roleName)
+    [InlineData(SeedIDs.Trevor, RoleNames.Organiser)]
+    [InlineData(SeedIDs.Alucard, RoleNames.Participant)]
+    public async Task Filter_NoRoleGiven_LetsAnyLoggedInUserThrough(int userID, string roleName)
     {
         var filter = new SessionAuthorizeAttribute();
 
-        var result = await RunFilter(filter, userId, roleName);
+        var result = await RunFilter(filter, userID, roleName);
 
         Assert.Null(result);
     }
@@ -135,12 +135,12 @@ public class RoleAccessTests
         Assert.NotNull(filter);
 
         //a participant gets turned away
-        var participantResult = await RunFilter(filter, SeedIds.Alucard, RoleNames.Participant);
+        var participantResult = await RunFilter(filter, SeedIDs.Alucard, RoleNames.Participant);
         Assert.NotNull(participantResult);
         Assert.Equal(StatusCodes.Status403Forbidden, ResultHelper.GetStatusCode(participantResult));
 
         //an organiser gets through
-        var organiserResult = await RunFilter(filter, SeedIds.Trevor, RoleNames.Organiser);
+        var organiserResult = await RunFilter(filter, SeedIDs.Trevor, RoleNames.Organiser);
         Assert.Null(organiserResult);
     }
 
@@ -155,12 +155,12 @@ public class RoleAccessTests
         Assert.NotNull(filter);
 
         //an organiser gets turned away
-        var organiserResult = await RunFilter(filter, SeedIds.Trevor, RoleNames.Organiser);
+        var organiserResult = await RunFilter(filter, SeedIDs.Trevor, RoleNames.Organiser);
         Assert.NotNull(organiserResult);
         Assert.Equal(StatusCodes.Status403Forbidden, ResultHelper.GetStatusCode(organiserResult));
 
         //a participant gets through
-        var participantResult = await RunFilter(filter, SeedIds.Alucard, RoleNames.Participant);
+        var participantResult = await RunFilter(filter, SeedIDs.Alucard, RoleNames.Participant);
         Assert.Null(participantResult);
     }
 
@@ -174,8 +174,8 @@ public class RoleAccessTests
         var filter = GetEndpointFilter(controllerType, methodName);
         Assert.NotNull(filter);
 
-        Assert.Null(await RunFilter(filter, SeedIds.Trevor, RoleNames.Organiser));
-        Assert.Null(await RunFilter(filter, SeedIds.Alucard, RoleNames.Participant));
+        Assert.Null(await RunFilter(filter, SeedIDs.Trevor, RoleNames.Organiser));
+        Assert.Null(await RunFilter(filter, SeedIDs.Alucard, RoleNames.Participant));
     }
 
     [Theory]

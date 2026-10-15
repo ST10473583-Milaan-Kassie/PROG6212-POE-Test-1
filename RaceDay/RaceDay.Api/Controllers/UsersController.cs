@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Services;
@@ -42,12 +42,12 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetMyProfile()
     {
-        //the id comes from the session, never from the url, so nobody can look at someone elses profile
-        var userId = HttpContext.Session.GetCurrentUserID();
+        //the ID comes from the session, never from the URL, so nobody can look at someone elses profile
+        var userID = HttpContext.Session.GetCurrentUserID();
 
         var user = await _context.Users
             .Include(u => u.Role)
-            .SingleOrDefaultAsync(u => u.UserID == userId);
+            .SingleOrDefaultAsync(u => u.UserID == userID);
 
         //only happens if the account is gone but the session isnt
         if (user == null)
@@ -78,11 +78,11 @@ public class UsersController : ControllerBase
     [HttpPut("me")]
     public async Task<IActionResult> UpdateMyProfile(UpdateProfileRequest request)
     {
-        var userId = HttpContext.Session.GetCurrentUserID();
+        var userID = HttpContext.Session.GetCurrentUserID();
 
         var user = await _context.Users
             .Include(u => u.Role)
-            .SingleOrDefaultAsync(u => u.UserID == userId);
+            .SingleOrDefaultAsync(u => u.UserID == userID);
 
         if (user == null)
         {
@@ -130,11 +130,11 @@ public class UsersController : ControllerBase
             return BadRequest(new { message = imageError });
         }
 
-        var userId = HttpContext.Session.GetCurrentUserID();
+        var userID = HttpContext.Session.GetCurrentUserID();
 
         var user = await _context.Users
             .Include(u => u.Role)
-            .SingleOrDefaultAsync(u => u.UserID == userId);
+            .SingleOrDefaultAsync(u => u.UserID == userID);
 
         if (user == null)
         {
@@ -142,15 +142,15 @@ public class UsersController : ControllerBase
         }
 
         //remembers the old picture so it can be removed once the new one is saved
-        var oldImageUrl = user.ProfileImageURL;
+        var oldImageURL = user.ProfileImageURL;
 
         user.ProfileImageURL = await _storage.UploadAsync(request.File!, "profile-pictures");
         await _context.SaveChangesAsync();
 
         //deleted after saving, so if the save failed the old picture would still work
-        if (oldImageUrl != null)
+        if (oldImageURL != null)
         {
-            await _storage.DeleteAsync(oldImageUrl);
+            await _storage.DeleteAsync(oldImageURL);
         }
 
         return Ok(UserResponse.FromUser(user, user.Role.RoleName));

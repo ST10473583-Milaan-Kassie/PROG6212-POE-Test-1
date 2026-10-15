@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
@@ -149,20 +149,20 @@ public class EventsController : ControllerBase
     [SessionAuthorize(RoleNames.Organiser)]
     public async Task<IActionResult> GetMyEvents()
     {
-        var userId = HttpContext.Session.GetCurrentUserID();
+        var userID = HttpContext.Session.GetCurrentUserID();
 
         var events = await _context.Events
             .Include(ev => ev.EventType)
             .Include(ev => ev.User)
-            .Where(ev => ev.UserID == userId)
+            .Where(ev => ev.UserID == userID)
             .OrderBy(ev => ev.EventDate)
             .ThenBy(ev => ev.EventID)
             .ToListAsync();
 
         //counts the enrolments per event in one query instead of loading every enrolment
-        var eventIds = events.Select(ev => ev.EventID).ToList();
+        var eventIDs = events.Select(ev => ev.EventID).ToList();
         var enrolmentCounts = await _context.Enrolments
-            .Where(en => eventIds.Contains(en.EventID))
+            .Where(en => eventIDs.Contains(en.EventID))
             .GroupBy(en => en.EventID)
             .Select(g => new { EventID = g.Key, Total = g.Count() })
             .ToDictionaryAsync(g => g.EventID, g => g.Total);
@@ -281,7 +281,7 @@ public class EventsController : ControllerBase
         //organisers can only change their own events
         if (ev.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only manage your own events.");
+            return APIResponses.Forbidden("You can only manage your own events.");
         }
 
         //once race day comes the event is locked
@@ -344,7 +344,7 @@ public class EventsController : ControllerBase
 
         ev.EventName = request.EventName.Trim();
 
-        //setting the type itself keeps the id and the name in the response in sync
+        //setting the type itself keeps the ID and the name in the response in sync
         ev.EventType = eventType;
         ev.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
         ev.EventDate = request.EventDate!.Value;
@@ -393,7 +393,7 @@ public class EventsController : ControllerBase
 
         if (ev.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only manage your own events.");
+            return APIResponses.Forbidden("You can only manage your own events.");
         }
 
         //events that have taken place are kept as history
@@ -403,7 +403,7 @@ public class EventsController : ControllerBase
         }
 
         //all three go in one SaveChanges so its one transaction, if anything fails nothing gets deleted
-        //ef works out the order itself, enrolments then categories then the event
+        //EF works out the order itself, enrolments then categories then the event
         //no results to remove, results only exist for events that have taken place and those cant be deleted
         _context.Enrolments.RemoveRange(ev.Enrolments);
         _context.Categories.RemoveRange(ev.Categories);
@@ -454,7 +454,7 @@ public class EventsController : ControllerBase
 
         if (ev.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only manage your own events.");
+            return APIResponses.Forbidden("You can only manage your own events.");
         }
 
         //jpg, png or webp up to 5 mb
@@ -465,15 +465,15 @@ public class EventsController : ControllerBase
         }
 
         //remembers the old banner so it can be removed once the new one is saved
-        var oldBannerUrl = ev.BannerImageURL;
+        var oldBannerURL = ev.BannerImageURL;
 
         ev.BannerImageURL = await _storage.UploadAsync(request.File!, "event-banners");
         await _context.SaveChangesAsync();
 
         //deleted after saving, so if the save failed the old banner would still work
-        if (oldBannerUrl != null)
+        if (oldBannerURL != null)
         {
-            await _storage.DeleteAsync(oldBannerUrl);
+            await _storage.DeleteAsync(oldBannerURL);
         }
 
         return Ok(EventResponse.FromEvent(ev, _clock.HasTakenPlace(ev.EventDate)));
@@ -497,7 +497,7 @@ public class EventsController : ControllerBase
             return BadRequest(new { message = "Distance must be between 0.01 and 9999.99 km." });
         }
 
-        //sql would quietly round anything past 2 decimals so its rejected instead
+        //SQL would quietly round anything past 2 decimals so its rejected instead
         if (decimal.Round(distance, 2) != distance)
         {
             return BadRequest(new { message = "Distance can have at most 2 decimal places." });

@@ -1,7 +1,7 @@
 ﻿namespace RaceDay.Api.Models;
 
 //a user is either an organiser or participant
-//the role dictates what they can do(which api endpoints they can use)
+//the role dictates what they can do(which API endpoints they can use)
 public class User
 {
     //PK
@@ -14,7 +14,7 @@ public class User
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
 
-    //dateonly maps to DATE in sql, used to check the category age restrictions when enrolling
+    //dateonly maps to DATE in SQL, used to check the category age restrictions when enrolling
     public DateOnly DateOfBirth { get; set; }
 
     //used to log in, must be unique
@@ -29,7 +29,7 @@ public class User
     //null until they upload a pic
     public string? ProfileImageURL { get; set; }
 
-    //the role this user belongs to, ef fills this in
+    //the role this user belongs to, EF fills this in
     public Role Role { get; set; } = null!;
 
     //the events this user has created, only organisers will have any

@@ -13,7 +13,7 @@ public class TestSetupTests
     {
         using var context = TestDbContextFactory.Create();
 
-        //same row counts as SeedData.cs and the sql script
+        //same row counts as SeedData.cs and the SQL script
         Assert.Equal(2, context.Roles.Count());
         Assert.Equal(4, context.Users.Count());
         Assert.Equal(3, context.EventTypes.Count());
@@ -32,9 +32,9 @@ public class TestSetupTests
         var controller = new EventTypesController(context);
         ControllerTestHelper.AttachSession(controller);
 
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
-        Assert.Equal(SeedIds.Trevor, controller.HttpContext.Session.GetCurrentUserID());
+        Assert.Equal(SeedIDs.Trevor, controller.HttpContext.Session.GetCurrentUserID());
         Assert.Equal(RoleNames.Organiser, controller.HttpContext.Session.GetString(SessionKeys.RoleName));
     }
 }

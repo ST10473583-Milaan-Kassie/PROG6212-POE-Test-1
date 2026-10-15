@@ -1,7 +1,7 @@
 ﻿namespace RaceDay.Api.Tests.Helpers;
 
-//the ids of the seed data rows in SeedData.cs, so the tests read as names instead of random numbers
-public static class SeedIds
+//the IDs of the seed data rows in SeedData.cs, so the tests read as names instead of random numbers
+public static class SeedIDs
 {
     //every seed user has this password
     public const string Password = "Password123!";

@@ -17,7 +17,7 @@ public class SouthAfricanClock : ISouthAfricanClock
     {
         get
         {
-            //takes the current utc time and moves it into south african time before taking the date
+            //takes the current UTC time and moves it into south african time before taking the date
             var southAfricanNow = TimeZoneInfo.ConvertTime(_timeProvider.GetUtcNow(), SouthAfricaTimeZone);
             return DateOnly.FromDateTime(southAfricanNow.DateTime);
         }
@@ -29,7 +29,7 @@ public class SouthAfricanClock : ISouthAfricanClock
         return eventDate <= Today;
     }
 
-    //the iana id works on windows and linux, the windows id is just a backup
+    //the iana ID works on windows and linux, the windows ID is just a backup
     private static TimeZoneInfo GetSouthAfricaTimeZone()
     {
         if (TimeZoneInfo.TryFindSystemTimeZoneById("Africa/Johannesburg", out var timeZone))

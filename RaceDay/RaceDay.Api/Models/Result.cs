@@ -10,7 +10,7 @@ public class Result
     //unique so an enrolment cant have more than one result
     public int EnrolmentID { get; set; }
 
-    //timeonly maps to TIME in sql
+    //timeonly maps to TIME in SQL
     public TimeOnly FinishTime { get; set; }
 
     public int FinishingPosition { get; set; }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
@@ -34,7 +34,7 @@ public class ResultsController : ControllerBase
     /// only for Confirmed enrolments, and only once per enrolment. The finish time is sent as hh:mm:ss.
     /// The finishing position must be at least 1 and no higher than the number of Confirmed enrolments for the event.
     /// </remarks>
-    /// <param name="enrolmentId">The enrolment's ID.</param>
+    /// <param name="enrolmentID">The enrolment's ID.</param>
     /// <param name="request">The finish time (hh:mm:ss) and the finishing position.</param>
     /// <response code="201">The result was captured.</response>
     /// <response code="400">The event has not taken place, the enrolment is not Confirmed, or the finish time or position is invalid.</response>
@@ -48,11 +48,11 @@ public class ResultsController : ControllerBase
     [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
-    //POST /api/enrolments/{enrolmentId}/results
+    //POST /api/enrolments/{enrolmentID}/results
     //captures a result for a confirmed enrolment on the logged in organisers own event, once its taken place
-    [HttpPost("api/enrolments/{enrolmentId:int}/results")]
+    [HttpPost("api/enrolments/{enrolmentID:int}/results")]
     [SessionAuthorize(RoleNames.Organiser)]
-    public async Task<IActionResult> CaptureResult(int enrolmentId, ResultRequest request)
+    public async Task<IActionResult> CaptureResult(int enrolmentID, ResultRequest request)
     {
         //event for the owner and date checks, user and category for the response, result for the duplicate check
         var enrolment = await _context.Enrolments
@@ -60,7 +60,7 @@ public class ResultsController : ControllerBase
             .Include(en => en.User)
             .Include(en => en.Category)
             .Include(en => en.Result)
-            .SingleOrDefaultAsync(en => en.EnrolmentID == enrolmentId);
+            .SingleOrDefaultAsync(en => en.EnrolmentID == enrolmentID);
 
         if (enrolment == null)
         {
@@ -69,7 +69,7 @@ public class ResultsController : ControllerBase
 
         if (enrolment.Event.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only capture results for your own events.");
+            return APIResponses.Forbidden("You can only capture results for your own events.");
         }
 
         //only one result per enrolment, UQ_Results_Enrolment backs this up in the database
@@ -109,7 +109,7 @@ public class ResultsController : ControllerBase
             return BadRequest(new { message = "Finish time must be more than 00:00:00." });
         }
 
-        //setting the enrolment sets the enrolmentid too
+        //setting the enrolment sets the EnrolmentID too
         var result = new Result
         {
             Enrolment = enrolment,
@@ -129,7 +129,7 @@ public class ResultsController : ControllerBase
     /// <remarks>
     /// Organisers only, and only for their own events.
     /// </remarks>
-    /// <param name="eventId">The event's ID.</param>
+    /// <param name="eventID">The event's ID.</param>
     /// <response code="200">The event's results.</response>
     /// <response code="401">Nobody is logged in.</response>
     /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
@@ -138,13 +138,13 @@ public class ResultsController : ControllerBase
     [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
-    //GET /api/events/{eventId}/results
+    //GET /api/events/{eventID}/results
     //all results for the logged in organisers own event, in finishing order
-    [HttpGet("api/events/{eventId:int}/results")]
+    [HttpGet("api/events/{eventID:int}/results")]
     [SessionAuthorize(RoleNames.Organiser)]
-    public async Task<IActionResult> GetEventResults(int eventId)
+    public async Task<IActionResult> GetEventResults(int eventID)
     {
-        var ev = await _context.Events.FindAsync(eventId);
+        var ev = await _context.Events.FindAsync(eventID);
 
         if (ev == null)
         {
@@ -153,14 +153,14 @@ public class ResultsController : ControllerBase
 
         if (ev.UserID != HttpContext.Session.GetCurrentUserID())
         {
-            return ApiResponses.Forbidden("You can only view results for your own events.");
+            return APIResponses.Forbidden("You can only view results for your own events.");
         }
 
         //participant and category come through the enrolment
         var results = await _context.Results
             .Include(r => r.Enrolment).ThenInclude(en => en.User)
             .Include(r => r.Enrolment).ThenInclude(en => en.Category)
-            .Where(r => r.Enrolment.EventID == eventId)
+            .Where(r => r.Enrolment.EventID == eventID)
             .OrderBy(r => r.FinishingPosition)
             .ThenBy(r => r.FinishTime)
             .ToListAsync();
@@ -187,19 +187,19 @@ public class ResultsController : ControllerBase
     [SessionAuthorize(RoleNames.Participant)]
     public async Task<IActionResult> GetMyResults()
     {
-        var userId = HttpContext.Session.GetCurrentUserID();
+        var userID = HttpContext.Session.GetCurrentUserID();
 
         var results = await _context.Results
             .Include(r => r.Enrolment).ThenInclude(en => en.Event)
             .Include(r => r.Enrolment).ThenInclude(en => en.Category)
-            .Where(r => r.Enrolment.UserID == userId)
+            .Where(r => r.Enrolment.UserID == userID)
             .OrderByDescending(r => r.Enrolment.Event.EventDate)
             .ToListAsync();
 
         //counts the finishers for each of those events in one query instead of loading every result
-        var eventIds = results.Select(r => r.Enrolment.EventID).Distinct().ToList();
+        var eventIDs = results.Select(r => r.Enrolment.EventID).Distinct().ToList();
         var finishersPerEvent = await _context.Results
-            .Where(r => eventIds.Contains(r.Enrolment.EventID))
+            .Where(r => eventIDs.Contains(r.Enrolment.EventID))
             .GroupBy(r => r.Enrolment.EventID)
             .Select(g => new { EventID = g.Key, Total = g.Count() })
             .ToDictionaryAsync(g => g.EventID, g => g.Total);

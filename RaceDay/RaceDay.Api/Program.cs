@@ -9,7 +9,7 @@ using RaceDay.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//registers the controllers so the api can find the endpoints
+//registers the controllers so the API can find the endpoints
 //validation errors come back in the same { message } shape as every other error, with each field's errors listed underneath
 builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(options =>
@@ -63,10 +63,10 @@ builder.Services.AddScoped<IFileStorageService, BlobStorageService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ISouthAfricanClock, SouthAfricanClock>();
 
-//session data gets kept in the server's memory, the browser only gets a cookie with the session id
+//session data gets kept in the server's memory, the browser only gets a cookie with the session ID
 builder.Services.AddDistributedMemoryCache();
 
-//server side sessions, keeps the logged in user's id and role between requests
+//server side sessions, keeps the logged in user's ID and role between requests
 builder.Services.AddSession(options =>
 {
     options.Cookie.Name = SessionKeys.CookieName;
@@ -77,7 +77,7 @@ builder.Services.AddSession(options =>
     //cookie only gets sent over https
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 
-    //the session cookie is needed for the api to work so its always allowed
+    //the session cookie is needed for the API to work so its always allowed
     options.Cookie.IsEssential = true;
 
     //logs the user out after 30 minutes of doing nothing

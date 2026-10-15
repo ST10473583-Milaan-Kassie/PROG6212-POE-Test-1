@@ -1,6 +1,6 @@
 ﻿namespace RaceDay.Api.Services;
 
-//one clock for south african time, every date rule in the api goes through this
+//one clock for south african time, every date rule in the API goes through this
 //its an interface so the tests can swap in a fake date
 public interface ISouthAfricanClock
 {

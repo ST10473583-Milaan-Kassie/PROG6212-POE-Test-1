@@ -5,7 +5,7 @@ using RaceDay.Api.Models;
 namespace RaceDay.Api.Data;
 
 //the dbcontext is what EF uses to talk to the database
-//each dbset is a table, OnModelCreating sets everything up to match the sql script
+//each dbset is a table, OnModelCreating sets everything up to match the SQL script
 public class RaceDayDbContext : DbContext
 {
     //the options (connection string etc) get passed in from Program.cs
@@ -22,7 +22,7 @@ public class RaceDayDbContext : DbContext
     public DbSet<Enrolment> Enrolments => Set<Enrolment>();
     public DbSet<Result> Results => Set<Result>();
 
-    //ef normally adds an index to every fk column, the sql script doesnt have any so this turns that off
+    //EF normally adds an index to every fk column, the SQL script doesnt have any so this turns that off
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder.Conventions.Remove(typeof(ForeignKeyIndexConvention));
@@ -67,7 +67,7 @@ public class RaceDayDbContext : DbContext
                 .HasName("UQ_Users_Email");
 
             //each user has one role, a role has many users
-            //noaction so nothing cascades, same as the sql
+            //noaction so nothing cascades, same as the SQL
             entity.HasOne(u => u.Role)
                 .WithMany(r => r.Users)
                 .HasForeignKey(u => u.RoleID)
@@ -75,7 +75,7 @@ public class RaceDayDbContext : DbContext
                 .HasConstraintName("FK_Users_Roles");
         });
 
-        //eventtype table, singular like the sql
+        //eventtype table, singular like the SQL
         modelBuilder.Entity<EventType>(entity =>
         {
             entity.ToTable("EventType");
@@ -157,7 +157,7 @@ public class RaceDayDbContext : DbContext
                 "CK_Enrolments_Status", "Status IN ('Pending', 'Confirmed')"));
             entity.HasKey(e => e.EnrolmentID);
 
-            //pending by default, same as the sql
+            //pending by default, same as the SQL
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Pending");
@@ -180,7 +180,7 @@ public class RaceDayDbContext : DbContext
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName("FK_Enrolments_Events");
 
-            //the category they picked, eventid and categoryid together have to match a category
+            //the category they picked, EventID and CategoryID together have to match a category
             //stops someone picking a category that belongs to a different event
             entity.HasOne(e => e.Category)
                 .WithMany(c => c.Enrolments)

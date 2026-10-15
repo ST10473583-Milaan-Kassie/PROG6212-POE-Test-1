@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RaceDay.Api.Controllers;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Tests.Helpers;
 
@@ -30,16 +30,16 @@ public class CategoriesControllerTests
         //no LogInAs, viewing categories is public
         var controller = CreateController(context);
 
-        var result = await controller.GetCategories(SeedIds.DurbanParkRun);
+        var result = await controller.GetCategories(SeedIDs.DurbanParkRun);
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var categories = Assert.IsAssignableFrom<IEnumerable<CategoryResponse>>(ok.Value).ToList();
 
         //both juniors start at 10, the one with no distance comes first, then open at 18
         Assert.Equal(3, categories.Count);
-        Assert.Equal(SeedIds.ParkRunJunior, categories[0].CategoryID);
-        Assert.Equal(SeedIds.ParkRunJunior2Point5Km, categories[1].CategoryID);
-        Assert.Equal(SeedIds.ParkRunOpen, categories[2].CategoryID);
+        Assert.Equal(SeedIDs.ParkRunJunior, categories[0].CategoryID);
+        Assert.Equal(SeedIDs.ParkRunJunior2Point5Km, categories[1].CategoryID);
+        Assert.Equal(SeedIDs.ParkRunOpen, categories[2].CategoryID);
 
         //junior 2.5km has both an age range and a distance
         Assert.Equal(10, categories[1].MinAge);
@@ -53,14 +53,14 @@ public class CategoriesControllerTests
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
 
-        var result = await controller.GetCategories(SeedIds.CapeTownCycleTour);
+        var result = await controller.GetCategories(SeedIDs.CapeTownCycleTour);
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var categories = Assert.IsAssignableFrom<IEnumerable<CategoryResponse>>(ok.Value).ToList();
 
         //the fun ride is open to every age so it has no min age and sorts first
         Assert.Equal(3, categories.Count);
-        Assert.Equal(SeedIds.CapeTownFunRide, categories[0].CategoryID);
+        Assert.Equal(SeedIDs.CapeTownFunRide, categories[0].CategoryID);
         Assert.Null(categories[0].MinAge);
         Assert.Null(categories[0].MaxAge);
         Assert.Equal(47.00m, categories[0].Distance);
@@ -73,11 +73,11 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var request = new CategoryRequest { CategoryName = "Veteran", MinAge = 40, MaxAge = 59 };
 
-        var result = await controller.AddCategory(SeedIds.DurbanParkRun, request);
+        var result = await controller.AddCategory(SeedIDs.DurbanParkRun, request);
 
         var created = Assert.IsType<ObjectResult>(result);
         Assert.Equal(StatusCodes.Status201Created, created.StatusCode);
@@ -89,7 +89,7 @@ public class CategoriesControllerTests
         //reads straight from the database to make sure it was saved
         context.ChangeTracker.Clear();
         var saved = context.Categories.Single(c => c.CategoryID == response.CategoryID);
-        Assert.Equal(SeedIds.DurbanParkRun, saved.EventID);
+        Assert.Equal(SeedIDs.DurbanParkRun, saved.EventID);
         Assert.Equal(59, saved.MaxAge);
         Assert.Null(saved.Distance);
     }
@@ -99,11 +99,11 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var request = new CategoryRequest { CategoryName = "Fun Walk 3km", Distance = 3.00m };
 
-        var result = await controller.AddCategory(SeedIds.DurbanParkRun, request);
+        var result = await controller.AddCategory(SeedIDs.DurbanParkRun, request);
 
         var created = Assert.IsType<ObjectResult>(result);
         Assert.Equal(StatusCodes.Status201Created, created.StatusCode);
@@ -124,12 +124,12 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //5km is the park runs full distance, a category can be exactly as long as its event
         var request = new CategoryRequest { CategoryName = "Senior 5km", MinAge = 20, MaxAge = 39, Distance = 5.00m };
 
-        var result = await controller.AddCategory(SeedIds.DurbanParkRun, request);
+        var result = await controller.AddCategory(SeedIDs.DurbanParkRun, request);
 
         Assert.Equal(StatusCodes.Status201Created, ResultHelper.GetStatusCode(result));
     }
@@ -139,9 +139,9 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
-        var result = await controller.AddCategory(SeedIds.DurbanParkRun, new CategoryRequest { CategoryName = "Nothing" });
+        var result = await controller.AddCategory(SeedIDs.DurbanParkRun, new CategoryRequest { CategoryName = "Nothing" });
 
         Assert.Equal(StatusCodes.Status400BadRequest, ResultHelper.GetStatusCode(result));
         Assert.Equal("A category must have an age range, a distance, or both.", ResultHelper.GetMessage(result));
@@ -153,11 +153,11 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var request = new CategoryRequest { CategoryName = "Under 20", MaxAge = 19, Distance = 5.00m };
 
-        var result = await controller.AddCategory(SeedIds.DurbanParkRun, request);
+        var result = await controller.AddCategory(SeedIDs.DurbanParkRun, request);
 
         Assert.Equal(StatusCodes.Status400BadRequest, ResultHelper.GetStatusCode(result));
         Assert.Equal("A maximum age needs a minimum age to go with it.", ResultHelper.GetMessage(result));
@@ -168,11 +168,11 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var request = new CategoryRequest { CategoryName = "Kids", MinAge = 9, MaxAge = 12 };
 
-        var result = await controller.AddCategory(SeedIds.DurbanParkRun, request);
+        var result = await controller.AddCategory(SeedIDs.DurbanParkRun, request);
 
         Assert.Equal(StatusCodes.Status400BadRequest, ResultHelper.GetStatusCode(result));
         Assert.Equal("Minimum age must be between 10 and 99.", ResultHelper.GetMessage(result));
@@ -183,12 +183,12 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //just past the park runs 5km
         var request = new CategoryRequest { CategoryName = "Too Far", Distance = 5.01m };
 
-        var result = await controller.AddCategory(SeedIds.DurbanParkRun, request);
+        var result = await controller.AddCategory(SeedIDs.DurbanParkRun, request);
 
         Assert.Equal(StatusCodes.Status400BadRequest, ResultHelper.GetStatusCode(result));
         Assert.Equal("Category distance cannot be longer than the event's distance of 5.00 km.", ResultHelper.GetMessage(result));
@@ -202,12 +202,12 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Sypha, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Sypha, RoleNames.Organiser);
 
         //attributes cant hold decimals so the values come in as doubles and get converted
         var request = new CategoryRequest { CategoryName = "Bad Distance", Distance = (decimal)distance };
 
-        var result = await controller.AddCategory(SeedIds.CapeTownCycleTour, request);
+        var result = await controller.AddCategory(SeedIDs.CapeTownCycleTour, request);
 
         Assert.Equal(StatusCodes.Status400BadRequest, ResultHelper.GetStatusCode(result));
         Assert.Equal("Distance must be between 0.01 and 9999.99 km.", ResultHelper.GetMessage(result));
@@ -218,11 +218,11 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var request = new CategoryRequest { CategoryName = "Odd Distance", Distance = 2.505m };
 
-        var result = await controller.AddCategory(SeedIds.DurbanParkRun, request);
+        var result = await controller.AddCategory(SeedIDs.DurbanParkRun, request);
 
         Assert.Equal(StatusCodes.Status400BadRequest, ResultHelper.GetStatusCode(result));
         Assert.Equal("Distance can have at most 2 decimal places.", ResultHelper.GetMessage(result));
@@ -235,17 +235,17 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //carmilla is enrolled in the park runs open category, dropping the ages cant leave her outside it
         var request = new CategoryRequest { CategoryName = "Open 5km", Distance = 5.00m };
 
-        var result = await controller.UpdateCategory(SeedIds.ParkRunOpen, request);
+        var result = await controller.UpdateCategory(SeedIDs.ParkRunOpen, request);
 
         Assert.Equal(StatusCodes.Status200OK, ResultHelper.GetStatusCode(result));
 
         context.ChangeTracker.Clear();
-        var saved = context.Categories.Single(c => c.CategoryID == SeedIds.ParkRunOpen);
+        var saved = context.Categories.Single(c => c.CategoryID == SeedIDs.ParkRunOpen);
         Assert.Null(saved.MinAge);
         Assert.Equal(5.00m, saved.Distance);
     }
@@ -255,17 +255,17 @@ public class CategoriesControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var request = new CategoryRequest { CategoryName = "Junior 6km", MinAge = 10, MaxAge = 17, Distance = 6.00m };
 
-        var result = await controller.UpdateCategory(SeedIds.ParkRunJunior2Point5Km, request);
+        var result = await controller.UpdateCategory(SeedIDs.ParkRunJunior2Point5Km, request);
 
         Assert.Equal(StatusCodes.Status400BadRequest, ResultHelper.GetStatusCode(result));
         Assert.Equal("Category distance cannot be longer than the event's distance of 5.00 km.", ResultHelper.GetMessage(result));
 
         //still 2.5km
         context.ChangeTracker.Clear();
-        Assert.Equal(2.50m, context.Categories.Single(c => c.CategoryID == SeedIds.ParkRunJunior2Point5Km).Distance);
+        Assert.Equal(2.50m, context.Categories.Single(c => c.CategoryID == SeedIDs.ParkRunJunior2Point5Km).Distance);
     }
 }

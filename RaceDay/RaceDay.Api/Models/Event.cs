@@ -18,7 +18,7 @@ public class Event
     //optional so its nullable
     public string? Description { get; set; }
 
-    //dateonly maps to DATE in sql
+    //dateonly maps to DATE in SQL
     public DateOnly EventDate { get; set; }
 
     public string Location { get; set; } = string.Empty;
@@ -29,7 +29,7 @@ public class Event
     //null until the organiser uploads one
     public string? BannerImageURL { get; set; }
 
-    //the type this event is, ef fills this in
+    //the type this event is, EF fills this in
     public EventType EventType { get; set; } = null!;
 
     //the organiser who created the event

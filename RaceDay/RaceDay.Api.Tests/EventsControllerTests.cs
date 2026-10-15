@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RaceDay.Api.Controllers;
 using RaceDay.Api.Data;
-using RaceDay.Api.Dtos;
+using RaceDay.Api.DTOs;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
 using RaceDay.Api.Tests.Helpers;
@@ -56,8 +56,8 @@ public class EventsControllerTests
         context.Enrolments.Add(new Enrolment
         {
             UserID = junior.UserID,
-            EventID = SeedIds.DurbanParkRun,
-            CategoryID = SeedIds.ParkRunJunior
+            EventID = SeedIDs.DurbanParkRun,
+            CategoryID = SeedIDs.ParkRunJunior
         });
         context.SaveChanges();
     }
@@ -69,7 +69,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var result = await controller.CreateEvent(TestRequests.ValidEventRequest());
 
@@ -83,7 +83,7 @@ public class EventsControllerTests
         //reads straight from the database, the event is saved and belongs to trevor
         context.ChangeTracker.Clear();
         var savedEvent = context.Events.Single(e => e.EventID == response.EventID);
-        Assert.Equal(SeedIds.Trevor, savedEvent.UserID);
+        Assert.Equal(SeedIDs.Trevor, savedEvent.UserID);
         Assert.Equal(4, context.Events.Count());
     }
 
@@ -92,7 +92,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
         var request = TestRequests.ValidEventRequest();
 
         //tomorrow is the earliest an event can be
@@ -108,7 +108,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
         var request = TestRequests.ValidEventRequest();
 
         //today counts as race day so it would be locked straight away
@@ -129,7 +129,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
         var request = TestRequests.ValidEventRequest();
 
         //attributes cant hold decimals so the values come in as doubles and get converted
@@ -146,7 +146,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
         var request = TestRequests.ValidEventRequest();
         request.Distance = 10.005m;
 
@@ -161,7 +161,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
         var request = TestRequests.ValidEventRequest();
         request.EventTypeID = 99;
 
@@ -178,14 +178,14 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //same date, new name and location
         var request = ParkRunRequest(new DateOnly(2027, 1, 16));
         request.EventName = "Durban North Beach Park Run";
         request.Location = "North Beach, Durban";
 
-        var result = await controller.UpdateEvent(SeedIds.DurbanParkRun, request);
+        var result = await controller.UpdateEvent(SeedIDs.DurbanParkRun, request);
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var response = Assert.IsType<EventResponse>(ok.Value);
@@ -193,7 +193,7 @@ public class EventsControllerTests
 
         //reads straight from the database to make sure the change was actually saved
         context.ChangeTracker.Clear();
-        var savedEvent = context.Events.Single(e => e.EventID == SeedIds.DurbanParkRun);
+        var savedEvent = context.Events.Single(e => e.EventID == SeedIDs.DurbanParkRun);
         Assert.Equal("Durban North Beach Park Run", savedEvent.EventName);
         Assert.Equal("North Beach, Durban", savedEvent.Location);
     }
@@ -205,17 +205,17 @@ public class EventsControllerTests
         var controller = CreateController(context);
 
         //sypha trying to change trevors park run
-        ControllerTestHelper.LogInAs(controller, SeedIds.Sypha, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Sypha, RoleNames.Organiser);
         var request = ParkRunRequest(new DateOnly(2027, 1, 16));
         request.EventName = "Not Trevors Anymore";
 
-        var result = await controller.UpdateEvent(SeedIds.DurbanParkRun, request);
+        var result = await controller.UpdateEvent(SeedIDs.DurbanParkRun, request);
 
         Assert.Equal(StatusCodes.Status403Forbidden, ResultHelper.GetStatusCode(result));
         Assert.Equal("You can only manage your own events.", ResultHelper.GetMessage(result));
 
         context.ChangeTracker.Clear();
-        Assert.Equal("Durban Beachfront Park Run", context.Events.Single(e => e.EventID == SeedIds.DurbanParkRun).EventName);
+        Assert.Equal("Durban Beachfront Park Run", context.Events.Single(e => e.EventID == SeedIDs.DurbanParkRun).EventName);
     }
 
     [Fact]
@@ -223,10 +223,10 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //comrades is trevors but its already happened
-        var result = await controller.UpdateEvent(SeedIds.ComradesMarathon, TestRequests.ValidEventRequest());
+        var result = await controller.UpdateEvent(SeedIDs.ComradesMarathon, TestRequests.ValidEventRequest());
 
         Assert.Equal(StatusCodes.Status409Conflict, ResultHelper.GetStatusCode(result));
         Assert.Equal("This event has already taken place and can no longer be changed.", ResultHelper.GetMessage(result));
@@ -237,7 +237,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var result = await controller.UpdateEvent(999, TestRequests.ValidEventRequest());
 
@@ -251,10 +251,10 @@ public class EventsControllerTests
         using var context = TestDbContextFactory.Create();
         AddJuniorToParkRun(context);
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //the day before marias 18th birthday, shes still 17 so still fits junior
-        var result = await controller.UpdateEvent(SeedIds.DurbanParkRun, ParkRunRequest(new DateOnly(2027, 11, 30)));
+        var result = await controller.UpdateEvent(SeedIDs.DurbanParkRun, ParkRunRequest(new DateOnly(2027, 11, 30)));
 
         Assert.Equal(StatusCodes.Status200OK, ResultHelper.GetStatusCode(result));
     }
@@ -265,17 +265,17 @@ public class EventsControllerTests
         using var context = TestDbContextFactory.Create();
         AddJuniorToParkRun(context);
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //marias 18th birthday, she'd be too old for junior on race day
-        var result = await controller.UpdateEvent(SeedIds.DurbanParkRun, ParkRunRequest(new DateOnly(2027, 12, 1)));
+        var result = await controller.UpdateEvent(SeedIDs.DurbanParkRun, ParkRunRequest(new DateOnly(2027, 12, 1)));
 
         Assert.Equal(StatusCodes.Status409Conflict, ResultHelper.GetStatusCode(result));
         Assert.Equal("This change would leave 1 enrolled participant outside their category's age range.", ResultHelper.GetMessage(result));
 
         //the date didnt move
         context.ChangeTracker.Clear();
-        Assert.Equal(new DateOnly(2027, 1, 16), context.Events.Single(e => e.EventID == SeedIds.DurbanParkRun).EventDate);
+        Assert.Equal(new DateOnly(2027, 1, 16), context.Events.Single(e => e.EventID == SeedIDs.DurbanParkRun).EventDate);
     }
 
     [Fact]
@@ -283,13 +283,13 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //the park runs longest category is junior 2.5km, so 2.5km is as short as the event can go
         var request = ParkRunRequest(new DateOnly(2027, 1, 16));
         request.Distance = 2.50m;
 
-        var result = await controller.UpdateEvent(SeedIds.DurbanParkRun, request);
+        var result = await controller.UpdateEvent(SeedIDs.DurbanParkRun, request);
 
         Assert.Equal(StatusCodes.Status200OK, ResultHelper.GetStatusCode(result));
     }
@@ -299,20 +299,20 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         //2km would make the event shorter than its junior 2.5km category
         var request = ParkRunRequest(new DateOnly(2027, 1, 16));
         request.Distance = 2.00m;
 
-        var result = await controller.UpdateEvent(SeedIds.DurbanParkRun, request);
+        var result = await controller.UpdateEvent(SeedIDs.DurbanParkRun, request);
 
         Assert.Equal(StatusCodes.Status409Conflict, ResultHelper.GetStatusCode(result));
         Assert.Equal("This change would leave 1 category longer than the event's distance.", ResultHelper.GetMessage(result));
 
         //the distance didnt change
         context.ChangeTracker.Clear();
-        Assert.Equal(5.00m, context.Events.Single(e => e.EventID == SeedIds.DurbanParkRun).Distance);
+        Assert.Equal(5.00m, context.Events.Single(e => e.EventID == SeedIDs.DurbanParkRun).Distance);
     }
 
     //delete
@@ -322,17 +322,17 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
-        var result = await controller.DeleteEvent(SeedIds.DurbanParkRun);
+        var result = await controller.DeleteEvent(SeedIDs.DurbanParkRun);
 
         Assert.IsType<NoContentResult>(result);
 
         //the park run, its 3 categories and carmillas enrolment are all gone
         context.ChangeTracker.Clear();
-        Assert.DoesNotContain(context.Events, e => e.EventID == SeedIds.DurbanParkRun);
-        Assert.DoesNotContain(context.Categories, c => c.EventID == SeedIds.DurbanParkRun);
-        Assert.DoesNotContain(context.Enrolments, en => en.EventID == SeedIds.DurbanParkRun);
+        Assert.DoesNotContain(context.Events, e => e.EventID == SeedIDs.DurbanParkRun);
+        Assert.DoesNotContain(context.Categories, c => c.EventID == SeedIDs.DurbanParkRun);
+        Assert.DoesNotContain(context.Enrolments, en => en.EventID == SeedIDs.DurbanParkRun);
 
         //the other events werent touched
         Assert.Equal(2, context.Events.Count());
@@ -347,15 +347,15 @@ public class EventsControllerTests
         var controller = CreateController(context);
 
         //trevor trying to delete syphas cape town cycle tour
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
-        var result = await controller.DeleteEvent(SeedIds.CapeTownCycleTour);
+        var result = await controller.DeleteEvent(SeedIDs.CapeTownCycleTour);
 
         Assert.Equal(StatusCodes.Status403Forbidden, ResultHelper.GetStatusCode(result));
         Assert.Equal("You can only manage your own events.", ResultHelper.GetMessage(result));
 
         context.ChangeTracker.Clear();
-        Assert.Contains(context.Events, e => e.EventID == SeedIds.CapeTownCycleTour);
+        Assert.Contains(context.Events, e => e.EventID == SeedIDs.CapeTownCycleTour);
     }
 
     [Fact]
@@ -363,16 +363,16 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
-        var result = await controller.DeleteEvent(SeedIds.ComradesMarathon);
+        var result = await controller.DeleteEvent(SeedIDs.ComradesMarathon);
 
         Assert.Equal(StatusCodes.Status409Conflict, ResultHelper.GetStatusCode(result));
         Assert.Equal("This event has already taken place and can no longer be deleted.", ResultHelper.GetMessage(result));
 
         //comrades and both its results are still there
         context.ChangeTracker.Clear();
-        Assert.Contains(context.Events, e => e.EventID == SeedIds.ComradesMarathon);
+        Assert.Contains(context.Events, e => e.EventID == SeedIDs.ComradesMarathon);
         Assert.Equal(2, context.Results.Count());
     }
 
@@ -381,7 +381,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var result = await controller.DeleteEvent(999);
 
@@ -396,7 +396,7 @@ public class EventsControllerTests
     {
         using var context = TestDbContextFactory.Create();
         var controller = CreateController(context);
-        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
 
         var result = await controller.GetMyEvents();
 
@@ -405,8 +405,8 @@ public class EventsControllerTests
 
         //trevors two events soonest first, syphas cape town isnt in here
         Assert.Equal(2, events.Count);
-        Assert.Equal(SeedIds.ComradesMarathon, events[0].EventID);
-        Assert.Equal(SeedIds.DurbanParkRun, events[1].EventID);
+        Assert.Equal(SeedIDs.ComradesMarathon, events[0].EventID);
+        Assert.Equal(SeedIDs.DurbanParkRun, events[1].EventID);
 
         //comrades has alucard and carmilla, the park run has carmilla
         Assert.Equal(2, events[0].TotalEnrolments);
@@ -427,9 +427,9 @@ public class EventsControllerTests
         var events = Assert.IsAssignableFrom<IEnumerable<EventResponse>>(ok.Value).ToList();
 
         Assert.Equal(3, events.Count);
-        Assert.Equal(SeedIds.ComradesMarathon, events[0].EventID);
-        Assert.Equal(SeedIds.DurbanParkRun, events[1].EventID);
-        Assert.Equal(SeedIds.CapeTownCycleTour, events[2].EventID);
+        Assert.Equal(SeedIDs.ComradesMarathon, events[0].EventID);
+        Assert.Equal(SeedIDs.DurbanParkRun, events[1].EventID);
+        Assert.Equal(SeedIDs.CapeTownCycleTour, events[2].EventID);
 
         //comrades is the only one thats taken place
         Assert.True(events[0].HasTakenPlace);
@@ -448,6 +448,6 @@ public class EventsControllerTests
         var events = Assert.IsAssignableFrom<IEnumerable<EventResponse>>(ok.Value).ToList();
 
         Assert.Equal(2, events.Count);
-        Assert.DoesNotContain(events, e => e.EventID == SeedIds.ComradesMarathon);
+        Assert.DoesNotContain(events, e => e.EventID == SeedIDs.ComradesMarathon);
     }
 }

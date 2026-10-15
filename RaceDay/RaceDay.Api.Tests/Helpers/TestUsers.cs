@@ -7,7 +7,7 @@ namespace RaceDay.Api.Tests.Helpers;
 //adds users straight into the test database for tests that need someone the seed data doesnt have
 public static class TestUsers
 {
-    //a new participant with whatever date of birth the test needs, gives back their id
+    //a new participant with whatever date of birth the test needs, gives back their ID
     public static int AddParticipant(RaceDayDbContext context, DateOnly dateOfBirth)
     {
         var participantRole = context.Roles.Single(r => r.RoleName == RoleNames.Participant);

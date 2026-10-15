@@ -65,7 +65,7 @@ jobs:
           COMPLETED: ${{ steps.checks.outputs.completed }}
         run: |
           {
-            echo "# Repository Structure Progress"
+            echo "# Part 1: Repository Structure Progress"
             echo ""
             echo "| Requirement | Status |"
             echo "|---|---|"
@@ -209,7 +209,7 @@ jobs:
           fi
 
           {
-            echo "# Part 2 Build and Test Progress"
+            echo "# Part 2: Build and Test Progress"
             echo ""
             echo "| Requirement | Status |"
             echo "|---|---|"
