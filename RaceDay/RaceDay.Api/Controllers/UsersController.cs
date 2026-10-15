@@ -4,6 +4,7 @@ using RaceDay.Api.Data;
 using RaceDay.Api.Dtos;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
+using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers;
 
@@ -15,10 +16,12 @@ namespace RaceDay.Api.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly RaceDayDbContext _context;
+    private readonly IFileStorageService _storage;
 
-    public UsersController(RaceDayDbContext context)
+    public UsersController(RaceDayDbContext context, IFileStorageService storage)
     {
         _context = context;
+        _storage = storage;
     }
 
     //GET /api/users/me
@@ -67,6 +70,45 @@ public class UsersController : ControllerBase
             : request.PhoneNumber.Trim();
 
         await _context.SaveChangesAsync();
+
+        return Ok(UserResponse.FromUser(user, user.Role.RoleName));
+    }
+
+    //POST /api/users/me/profile-picture
+    //uploads or replaces the logged in users profile picture
+    [HttpPost("me/profile-picture")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadProfilePicture([FromForm] ImageUploadRequest request)
+    {
+        //jpg, png or webp up to 5 mb
+        var imageError = ImageValidation.Validate(request.File);
+        if (imageError != null)
+        {
+            return BadRequest(new { message = imageError });
+        }
+
+        var userId = HttpContext.Session.GetCurrentUserID();
+
+        var user = await _context.Users
+            .Include(u => u.Role)
+            .SingleOrDefaultAsync(u => u.UserID == userId);
+
+        if (user == null)
+        {
+            return Unauthorized(new { message = "You must be logged in to access this endpoint." });
+        }
+
+        //remembers the old picture so it can be removed once the new one is saved
+        var oldImageUrl = user.ProfileImageURL;
+
+        user.ProfileImageURL = await _storage.UploadAsync(request.File!, "profile-pictures");
+        await _context.SaveChangesAsync();
+
+        //deleted after saving, so if the save failed the old picture would still work
+        if (oldImageUrl != null)
+        {
+            await _storage.DeleteAsync(oldImageUrl);
+        }
 
         return Ok(UserResponse.FromUser(user, user.Role.RoleName));
     }

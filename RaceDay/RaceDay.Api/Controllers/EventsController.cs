@@ -16,11 +16,13 @@ public class EventsController : ControllerBase
 {
     private readonly RaceDayDbContext _context;
     private readonly ISouthAfricanClock _clock;
+    private readonly IFileStorageService _storage;
 
-    public EventsController(RaceDayDbContext context, ISouthAfricanClock clock)
+    public EventsController(RaceDayDbContext context, ISouthAfricanClock clock, IFileStorageService storage)
     {
         _context = context;
         _clock = clock;
+        _storage = storage;
     }
 
     //GET /api/events
@@ -301,6 +303,52 @@ public class EventsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    //POST /api/events/{id}/banner
+    //uploads or replaces the banner on the logged in organisers own event
+    //no taken place check, banners can still go up after race day like the plan says
+    [HttpPost("{id:int}/banner")]
+    [SessionAuthorize(RoleNames.Organiser)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadBanner(int id, [FromForm] ImageUploadRequest request)
+    {
+        //type and organiser get loaded for the response
+        var ev = await _context.Events
+            .Include(e => e.EventType)
+            .Include(e => e.User)
+            .SingleOrDefaultAsync(e => e.EventID == id);
+
+        if (ev == null)
+        {
+            return NotFound(new { message = "Event not found." });
+        }
+
+        if (ev.UserID != HttpContext.Session.GetCurrentUserID())
+        {
+            return ApiResponses.Forbidden("You can only manage your own events.");
+        }
+
+        //jpg, png or webp up to 5 mb
+        var imageError = ImageValidation.Validate(request.File);
+        if (imageError != null)
+        {
+            return BadRequest(new { message = imageError });
+        }
+
+        //remembers the old banner so it can be removed once the new one is saved
+        var oldBannerUrl = ev.BannerImageURL;
+
+        ev.BannerImageURL = await _storage.UploadAsync(request.File!, "event-banners");
+        await _context.SaveChangesAsync();
+
+        //deleted after saving, so if the save failed the old banner would still work
+        if (oldBannerUrl != null)
+        {
+            await _storage.DeleteAsync(oldBannerUrl);
+        }
+
+        return Ok(EventResponse.FromEvent(ev, _clock.HasTakenPlace(ev.EventDate)));
     }
 
     //checks the parts of an event request that the annotations cant, used by create and update
