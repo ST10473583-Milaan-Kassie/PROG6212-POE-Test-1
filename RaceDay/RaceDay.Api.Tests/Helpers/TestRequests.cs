@@ -19,4 +19,18 @@ public static class TestRequests
             RoleName = RoleNames.Participant
         };
     }
+
+    //a new upcoming event, a few months after the test date
+    public static EventRequest ValidEventRequest()
+    {
+        return new EventRequest
+        {
+            EventName = "Umhlanga Sunset 10K",
+            Description = "Evening road race along the Umhlanga promenade.",
+            EventDate = new DateOnly(2027, 2, 20),
+            Location = "Umhlanga",
+            Distance = 10.00m,
+            EventTypeID = 1
+        };
+    }
 }
