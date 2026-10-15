@@ -9,6 +9,9 @@ using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers;
 
+/// <summary>
+/// Registration, login and logout for both roles.
+/// </summary>
 //handles registering, logging in and logging out
 [ApiController]
 [Route("api/auth")]
@@ -24,6 +27,21 @@ public class AuthController : ControllerBase
         _clock = clock;
     }
 
+    /// <summary>
+    /// Registers a new Organiser or Participant account.
+    /// </summary>
+    /// <remarks>
+    /// No login is required, and registering does not log the user in.
+    /// The role name must be Organiser or Participant, and the email must not already be in use.
+    /// Users must be younger than 100 on the registration date. Organisers must be at least 18 and Participants at least 10.
+    /// The password must be 8 to 72 characters and is only ever stored as a BCrypt hash.
+    /// </remarks>
+    /// <response code="201">The account was created. The new user's details are returned, without the password.</response>
+    /// <response code="400">A field is missing or invalid, the role name is not recognised, or the date of birth breaks the age limits.</response>
+    /// <response code="409">An account with this email already exists.</response>
+    [ProducesResponseType<UserResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //POST /api/auth/register
     //creates a new organiser or participant account, doesnt log them in
     [HttpPost("register")]
@@ -92,6 +110,20 @@ public class AuthController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, UserResponse.FromUser(user, role.RoleName));
     }
 
+    /// <summary>
+    /// Logs in and starts a server-side session.
+    /// </summary>
+    /// <remarks>
+    /// No login is required. On success, the user's ID and role are stored in a server-side session,
+    /// and the browser receives the RaceDay.Session cookie, which it sends with every later request.
+    /// The same message is returned for an unknown email and a wrong password.
+    /// </remarks>
+    /// <response code="200">Login succeeded. The user's details are returned.</response>
+    /// <response code="400">The email or password is missing, or the email is not valid.</response>
+    /// <response code="401">The email or password is incorrect.</response>
+    [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
     //POST /api/auth/login
     //checks the email and password, then starts the session
     [HttpPost("login")]
@@ -121,6 +153,16 @@ public class AuthController : ControllerBase
         return Ok(UserResponse.FromUser(user, user.Role.RoleName));
     }
 
+    /// <summary>
+    /// Logs out and ends the session.
+    /// </summary>
+    /// <remarks>
+    /// Requires a logged-in user of either role. Clears the server-side session and removes the session cookie.
+    /// </remarks>
+    /// <response code="200">Logged out.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
     //POST /api/auth/logout
     //ends the session, any logged in user can do this
     [HttpPost("logout")]

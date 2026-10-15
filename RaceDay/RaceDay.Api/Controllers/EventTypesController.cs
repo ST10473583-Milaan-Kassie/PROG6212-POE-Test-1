@@ -5,6 +5,9 @@ using RaceDay.Api.Dtos;
 
 namespace RaceDay.Api.Controllers;
 
+/// <summary>
+/// The event type lookup: Run, Walk and Cycle.
+/// </summary>
 //the event types lookup, no login needed
 [ApiController]
 [Route("api/event-types")]
@@ -17,6 +20,14 @@ public class EventTypesController : ControllerBase
         _context = context;
     }
 
+    /// <summary>
+    /// Lists all event types.
+    /// </summary>
+    /// <remarks>
+    /// No login is required. Used by the front end for its event forms and filters.
+    /// </remarks>
+    /// <response code="200">The event types.</response>
+    [ProducesResponseType<IEnumerable<EventTypeResponse>>(StatusCodes.Status200OK)]
     //GET /api/event-types
     //lists run, walk and cycle for the front end's forms and filters
     [HttpGet]

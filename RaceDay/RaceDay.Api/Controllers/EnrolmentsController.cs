@@ -9,6 +9,9 @@ using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers;
 
+/// <summary>
+/// Event enrolments. Participants enrol and withdraw, and Organisers view and confirm enrolments for their own events.
+/// </summary>
 //enrolments, participants enrol and withdraw, organisers view and confirm them
 //no route on the class, the endpoints sit under both /api/events and /api/enrolments like the plan
 [ApiController]
@@ -23,6 +26,26 @@ public class EnrolmentsController : ControllerBase
         _clock = clock;
     }
 
+    /// <summary>
+    /// Enrols the logged-in Participant in an upcoming event, under the chosen category.
+    /// </summary>
+    /// <remarks>
+    /// Participants only. The category must belong to this event, and the participant's age on the event date must fall within its age range.
+    /// Each participant can enrol only once per event. New enrolments start as Pending until the Organiser confirms them.
+    /// </remarks>
+    /// <param name="eventId">The event's ID.</param>
+    /// <response code="201">The enrolment was recorded.</response>
+    /// <response code="400">The event has already taken place, the category is not part of the event, or the participant's age is outside the category's range.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not a Participant.</response>
+    /// <response code="404">No event has this ID.</response>
+    /// <response code="409">The participant is already enrolled in this event.</response>
+    [ProducesResponseType<EnrolmentResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //POST /api/events/{eventId}/enrolments
     //enters the logged in participant into an upcoming event under the category they picked
     [HttpPost("api/events/{eventId:int}/enrolments")]
@@ -83,6 +106,24 @@ public class EnrolmentsController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, EnrolmentResponse.FromEnrolment(enrolment, false));
     }
 
+    /// <summary>
+    /// Withdraws the logged-in Participant's own enrolment from an upcoming event.
+    /// </summary>
+    /// <remarks>
+    /// Participants only, and only for their own enrolments.
+    /// Enrolments for events that have taken place are kept as historical records and cannot be withdrawn.
+    /// </remarks>
+    /// <param name="id">The enrolment's ID.</param>
+    /// <response code="204">The enrolment was withdrawn.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not a Participant, or the enrolment belongs to someone else.</response>
+    /// <response code="404">No enrolment has this ID.</response>
+    /// <response code="409">The event has already taken place.</response>
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //DELETE /api/enrolments/{id}
     //withdraws the logged in participant from an upcoming event
     [HttpDelete("api/enrolments/{id:int}")]
@@ -118,6 +159,18 @@ public class EnrolmentsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Lists the logged-in Participant's own enrolments.
+    /// </summary>
+    /// <remarks>
+    /// Participants only. Events are returned soonest first. hasTakenPlace shows whether withdrawing is still allowed.
+    /// </remarks>
+    /// <response code="200">The participant's enrolments.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not a Participant.</response>
+    [ProducesResponseType<IEnumerable<EnrolmentResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     //GET /api/enrolments/me
     //the logged in participants own enrolments, soonest events first
     [HttpGet("api/enrolments/me")]
@@ -137,6 +190,22 @@ public class EnrolmentsController : ControllerBase
         return Ok(enrolments.Select(en => EnrolmentResponse.FromEnrolment(en, _clock.HasTakenPlace(en.Event.EventDate))));
     }
 
+    /// <summary>
+    /// Lists the enrolments for the logged-in Organiser's own event.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only, and only for their own events. Only each participant's name is returned, not their contact details or date of birth.
+    /// </remarks>
+    /// <param name="eventId">The event's ID.</param>
+    /// <param name="categoryID">Optional. Only show enrolments in this category.</param>
+    /// <response code="200">The event's enrolments, grouped by category.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
+    /// <response code="404">No event has this ID, or the category is not part of this event.</response>
+    [ProducesResponseType<IEnumerable<EventEnrolmentResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
     //GET /api/events/{eventId}/enrolments
     //all enrolments for the logged in organisers own event, can be filtered by category
     [HttpGet("api/events/{eventId:int}/enrolments")]
@@ -186,6 +255,27 @@ public class EnrolmentsController : ControllerBase
         return Ok(enrolments.Select(EventEnrolmentResponse.FromEnrolment));
     }
 
+    /// <summary>
+    /// Sets an enrolment on the logged-in Organiser's own event to Pending or Confirmed.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only, and only for their own events. The status can still be changed on race day, so participants can be confirmed as they check in.
+    /// It cannot be changed once a result has been captured. A Confirmed enrolment also cannot be set back to Pending
+    /// if that would leave fewer Confirmed enrolments than the highest finishing position already captured.
+    /// </remarks>
+    /// <param name="id">The enrolment's ID.</param>
+    /// <response code="200">The updated enrolment.</response>
+    /// <response code="400">The status is missing, or is not Pending or Confirmed.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
+    /// <response code="404">No enrolment has this ID.</response>
+    /// <response code="409">A result has already been captured, or the change would leave fewer Confirmed enrolments than the highest finishing position.</response>
+    [ProducesResponseType<EventEnrolmentResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //PUT /api/enrolments/{id}/status
     //sets an enrolment on the logged in organisers own event to pending or confirmed
     [HttpPut("api/enrolments/{id:int}/status")]

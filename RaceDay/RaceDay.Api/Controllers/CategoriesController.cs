@@ -9,6 +9,9 @@ using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers;
 
+/// <summary>
+/// Categories for each event. Anyone can view them, and Organisers manage them for their own events.
+/// </summary>
 //categories for each event
 //no route on the class, half the endpoints sit under /api/events and half under /api/categories like the plan
 [ApiController]
@@ -23,6 +26,17 @@ public class CategoriesController : ControllerBase
         _clock = clock;
     }
 
+    /// <summary>
+    /// Lists the categories for an event.
+    /// </summary>
+    /// <remarks>
+    /// No login is required. Categories are returned youngest first. A maxAge of null means there is no maximum age.
+    /// </remarks>
+    /// <param name="eventId">The event's ID.</param>
+    /// <response code="200">The event's categories.</response>
+    /// <response code="404">No event has this ID.</response>
+    [ProducesResponseType<IEnumerable<CategoryResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
     //GET /api/events/{eventId}/categories
     //lists an events categories, anyone can see them
     [HttpGet("api/events/{eventId:int}/categories")]
@@ -43,6 +57,26 @@ public class CategoriesController : ControllerBase
         return Ok(categories.Select(CategoryResponse.FromCategory));
     }
 
+    /// <summary>
+    /// Adds a category to the logged-in Organiser's own upcoming event.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only, and only for their own events. Categories cannot be added once the event has taken place.
+    /// The minimum age must be between 10 and 99. The maximum age is optional, but when set it must be between the minimum age and 99.
+    /// </remarks>
+    /// <param name="eventId">The event's ID.</param>
+    /// <response code="201">The category was added.</response>
+    /// <response code="400">A field is missing, or the ages are outside 10 to 99 or the wrong way round.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
+    /// <response code="404">No event has this ID.</response>
+    /// <response code="409">The event has already taken place.</response>
+    [ProducesResponseType<CategoryResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //POST /api/events/{eventId}/categories
     //adds a category to the logged in organisers own upcoming event
     [HttpPost("api/events/{eventId:int}/categories")]
@@ -88,6 +122,26 @@ public class CategoriesController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, CategoryResponse.FromCategory(category));
     }
 
+    /// <summary>
+    /// Updates a category on the logged-in Organiser's own upcoming event.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only, and only for their own events. The same age rules apply as when adding a category.
+    /// The new age range must still include the age, on the event date, of every participant already enrolled in the category.
+    /// </remarks>
+    /// <param name="id">The category's ID.</param>
+    /// <response code="200">The updated category.</response>
+    /// <response code="400">A field is missing, or the ages are outside 10 to 99 or the wrong way round.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
+    /// <response code="404">No category has this ID.</response>
+    /// <response code="409">The event has already taken place, or the new range would leave enrolments outside it.</response>
+    [ProducesResponseType<CategoryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //PUT /api/categories/{id}
     //updates a category on the logged in organisers own upcoming event
     [HttpPut("api/categories/{id:int}")]
@@ -144,6 +198,24 @@ public class CategoriesController : ControllerBase
         return Ok(CategoryResponse.FromCategory(category));
     }
 
+    /// <summary>
+    /// Deletes a category on the logged-in Organiser's own upcoming event, along with the enrolments that selected it.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only, and only for their own events. The category and its enrolments are deleted together in one transaction.
+    /// Categories of events that have taken place cannot be deleted.
+    /// </remarks>
+    /// <param name="id">The category's ID.</param>
+    /// <response code="204">The category was deleted.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
+    /// <response code="404">No category has this ID.</response>
+    /// <response code="409">The event has already taken place.</response>
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //DELETE /api/categories/{id}
     //deletes a category on the logged in organisers own upcoming event, along with the enrolments that picked it
     [HttpDelete("api/categories/{id:int}")]

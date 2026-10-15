@@ -9,6 +9,9 @@ using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers;
 
+/// <summary>
+/// Viewing events, and managing events for Organisers.
+/// </summary>
 //events, the public viewing endpoints and the organiser management endpoints
 [ApiController]
 [Route("api/events")]
@@ -25,6 +28,17 @@ public class EventsController : ControllerBase
         _storage = storage;
     }
 
+    /// <summary>
+    /// Lists all events, with optional filters.
+    /// </summary>
+    /// <remarks>
+    /// No login is required. Filters can be combined, and any filter left out is not applied.
+    /// Events are returned soonest first, and hasTakenPlace is worked out in South African time.
+    /// </remarks>
+    /// <response code="200">The matching events.</response>
+    /// <response code="400">The event type does not exist, fromDate is after toDate, or a value could not be read.</response>
+    [ProducesResponseType<IEnumerable<EventResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
     //GET /api/events
     //lists all events, anyone can see them, filters are all optional
     [HttpGet]
@@ -87,6 +101,17 @@ public class EventsController : ControllerBase
         return Ok(events.Select(ev => EventResponse.FromEvent(ev, _clock.HasTakenPlace(ev.EventDate))));
     }
 
+    /// <summary>
+    /// Returns a single event.
+    /// </summary>
+    /// <remarks>
+    /// No login is required.
+    /// </remarks>
+    /// <param name="id">The event's ID.</param>
+    /// <response code="200">The event.</response>
+    /// <response code="404">No event has this ID.</response>
+    [ProducesResponseType<EventResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
     //GET /api/events/{id}
     //one events details, anyone can see it
     //:int means only numbers match, so /api/events/mine doesnt get mixed up with this
@@ -106,6 +131,18 @@ public class EventsController : ControllerBase
         return Ok(EventResponse.FromEvent(ev, _clock.HasTakenPlace(ev.EventDate)));
     }
 
+    /// <summary>
+    /// Lists the logged-in Organiser's own events, with the total enrolments for each.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only. totalEnrolments counts both Pending and Confirmed enrolments.
+    /// </remarks>
+    /// <response code="200">The Organiser's events.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser.</response>
+    [ProducesResponseType<IEnumerable<EventResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     //GET /api/events/mine
     //the logged in organisers own events, with how many people have enrolled in each
     [HttpGet("mine")]
@@ -142,6 +179,21 @@ public class EventsController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Creates a new event owned by the logged-in Organiser.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only. The event date must be after today, measured in South African time.
+    /// Distance must be between 0.01 and 9999.99 km with at most 2 decimal places, and the event type must exist.
+    /// </remarks>
+    /// <response code="201">The event was created.</response>
+    /// <response code="400">A field is missing or invalid, the date is not after today, or the event type does not exist.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser.</response>
+    [ProducesResponseType<EventResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     //POST /api/events
     //creates a new event owned by the logged in organiser
     [HttpPost]
@@ -187,6 +239,26 @@ public class EventsController : ControllerBase
         return CreatedAtAction(nameof(GetEvent), new { id = ev.EventID }, response);
     }
 
+    /// <summary>
+    /// Updates the logged-in Organiser's own upcoming event.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only, and only for their own events. An event cannot be changed once it has taken place, and race day counts.
+    /// The new date must be after today. If the date changes, every enrolled participant's age on the new date must still fit their category.
+    /// </remarks>
+    /// <param name="id">The event's ID.</param>
+    /// <response code="200">The updated event.</response>
+    /// <response code="400">A field is missing or invalid, the date is not after today, or the event type does not exist.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
+    /// <response code="404">No event has this ID.</response>
+    /// <response code="409">The event has already taken place, or the new date would leave enrolments outside their category's age range.</response>
+    [ProducesResponseType<EventResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //PUT /api/events/{id}
     //updates the logged in organisers own event, only while its still upcoming
     [HttpPut("{id:int}")]
@@ -266,6 +338,24 @@ public class EventsController : ControllerBase
         return Ok(EventResponse.FromEvent(ev, _clock.HasTakenPlace(ev.EventDate)));
     }
 
+    /// <summary>
+    /// Deletes the logged-in Organiser's own upcoming event, along with its categories and enrolments.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only, and only for their own events. The event, its categories and its enrolments are deleted together in one transaction.
+    /// Events that have taken place are kept as history and cannot be deleted.
+    /// </remarks>
+    /// <param name="id">The event's ID.</param>
+    /// <response code="204">The event was deleted.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
+    /// <response code="404">No event has this ID.</response>
+    /// <response code="409">The event has already taken place.</response>
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status409Conflict)]
     //DELETE /api/events/{id}
     //deletes the logged in organisers own upcoming event, along with its categories and enrolments
     [HttpDelete("{id:int}")]
@@ -305,6 +395,25 @@ public class EventsController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Uploads or replaces the banner image for the logged-in Organiser's own event.
+    /// </summary>
+    /// <remarks>
+    /// Organisers only, and only for their own events. Send the image as multipart/form-data in the File field.
+    /// It must be a JPG, PNG or WEBP file no larger than 5 MB. Banners can still be uploaded after the event has taken place.
+    /// Any previous banner is deleted from storage.
+    /// </remarks>
+    /// <param name="id">The event's ID.</param>
+    /// <response code="200">The updated event, with the new banner's URL.</response>
+    /// <response code="400">The file is missing, larger than 5 MB, not a JPG, PNG or WEBP, or not a valid image.</response>
+    /// <response code="401">Nobody is logged in.</response>
+    /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
+    /// <response code="404">No event has this ID.</response>
+    [ProducesResponseType<EventResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<MessageResponse>(StatusCodes.Status404NotFound)]
     //POST /api/events/{id}/banner
     //uploads or replaces the banner on the logged in organisers own event
     //no taken place check, banners can still go up after race day like the plan says

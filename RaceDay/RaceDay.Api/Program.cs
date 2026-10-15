@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Reflection;
 using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using RaceDay.Api.Data;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Services;
@@ -29,7 +31,23 @@ builder.Services.AddControllers()
     });
 
 //registers swagger so every endpoint can be viewed and tested in the browser
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    //the title and description at the top of the swagger page
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "RaceDay API",
+        Version = "v1",
+        Description = "REST API for the RaceDay race event management system. " +
+            "Log in with POST /api/auth/login first. The browser keeps the session cookie, " +
+            "so endpoints that require a login can then be tried directly on this page. " +
+            "Log out with POST /api/auth/logout."
+    });
+
+    //pulls the /// comments into swagger, true includes the ones above each controller as section descriptions
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFile), includeControllerXmlComments: true);
+});
 
 //registers the dbcontext, the connection string comes from appsettings.json
 builder.Services.AddDbContext<RaceDayDbContext>(options =>
