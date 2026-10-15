@@ -36,6 +36,7 @@ public class AuthController : ControllerBase
     /// Users must be younger than 100 on the registration date. Organisers must be at least 18 and Participants at least 10.
     /// The password must be 8 to 72 characters and is only ever stored as a BCrypt hash.
     /// </remarks>
+    /// <param name="request">The new user's details. RoleName must be Organiser or Participant.</param>
     /// <response code="201">The account was created. The new user's details are returned, without the password.</response>
     /// <response code="400">A field is missing or invalid, the role name is not recognised, or the date of birth breaks the age limits.</response>
     /// <response code="409">An account with this email already exists.</response>
@@ -118,6 +119,7 @@ public class AuthController : ControllerBase
     /// and the browser receives the RaceDay.Session cookie, which it sends with every later request.
     /// The same message is returned for an unknown email and a wrong password.
     /// </remarks>
+    /// <param name="request">The user's email and password.</param>
     /// <response code="200">Login succeeded. The user's details are returned.</response>
     /// <response code="400">The email or password is missing, or the email is not valid.</response>
     /// <response code="401">The email or password is incorrect.</response>

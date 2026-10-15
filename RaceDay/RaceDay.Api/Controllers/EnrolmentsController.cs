@@ -34,6 +34,7 @@ public class EnrolmentsController : ControllerBase
     /// Each participant can enrol only once per event. New enrolments start as Pending until the Organiser confirms them.
     /// </remarks>
     /// <param name="eventId">The event's ID.</param>
+    /// <param name="request">The ID of the category to enrol under.</param>
     /// <response code="201">The enrolment was recorded.</response>
     /// <response code="400">The event has already taken place, the category is not part of the event, or the participant's age is outside the category's range.</response>
     /// <response code="401">Nobody is logged in.</response>
@@ -264,6 +265,7 @@ public class EnrolmentsController : ControllerBase
     /// if that would leave fewer Confirmed enrolments than the highest finishing position already captured.
     /// </remarks>
     /// <param name="id">The enrolment's ID.</param>
+    /// <param name="request">The new status, either Pending or Confirmed.</param>
     /// <response code="200">The updated enrolment.</response>
     /// <response code="400">The status is missing, or is not Pending or Confirmed.</response>
     /// <response code="401">Nobody is logged in.</response>

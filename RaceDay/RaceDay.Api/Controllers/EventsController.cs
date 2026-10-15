@@ -186,6 +186,7 @@ public class EventsController : ControllerBase
     /// Organisers only. The event date must be after today, measured in South African time.
     /// Distance must be between 0.01 and 9999.99 km with at most 2 decimal places, and the event type must exist.
     /// </remarks>
+    /// <param name="request">The new event's details.</param>
     /// <response code="201">The event was created.</response>
     /// <response code="400">A field is missing or invalid, the date is not after today, or the event type does not exist.</response>
     /// <response code="401">Nobody is logged in.</response>
@@ -247,6 +248,7 @@ public class EventsController : ControllerBase
     /// The new date must be after today. If the date changes, every enrolled participant's age on the new date must still fit their category.
     /// </remarks>
     /// <param name="id">The event's ID.</param>
+    /// <param name="request">The event's details. Every field is sent, including any that have not changed.</param>
     /// <response code="200">The updated event.</response>
     /// <response code="400">A field is missing or invalid, the date is not after today, or the event type does not exist.</response>
     /// <response code="401">Nobody is logged in.</response>
@@ -404,6 +406,7 @@ public class EventsController : ControllerBase
     /// Any previous banner is deleted from storage.
     /// </remarks>
     /// <param name="id">The event's ID.</param>
+    /// <param name="request">The banner image, sent in the File field.</param>
     /// <response code="200">The updated event, with the new banner's URL.</response>
     /// <response code="400">The file is missing, larger than 5 MB, not a JPG, PNG or WEBP, or not a valid image.</response>
     /// <response code="401">Nobody is logged in.</response>

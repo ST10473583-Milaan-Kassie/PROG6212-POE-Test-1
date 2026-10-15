@@ -35,6 +35,7 @@ public class ResultsController : ControllerBase
     /// The finishing position must be at least 1 and no higher than the number of Confirmed enrolments for the event.
     /// </remarks>
     /// <param name="enrolmentId">The enrolment's ID.</param>
+    /// <param name="request">The finish time (hh:mm:ss) and the finishing position.</param>
     /// <response code="201">The result was captured.</response>
     /// <response code="400">The event has not taken place, the enrolment is not Confirmed, or the finish time or position is invalid.</response>
     /// <response code="401">Nobody is logged in.</response>

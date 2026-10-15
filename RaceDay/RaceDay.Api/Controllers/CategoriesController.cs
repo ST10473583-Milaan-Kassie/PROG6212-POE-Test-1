@@ -65,6 +65,7 @@ public class CategoriesController : ControllerBase
     /// The minimum age must be between 10 and 99. The maximum age is optional, but when set it must be between the minimum age and 99.
     /// </remarks>
     /// <param name="eventId">The event's ID.</param>
+    /// <param name="request">The category's name, minimum age and optional maximum age.</param>
     /// <response code="201">The category was added.</response>
     /// <response code="400">A field is missing, or the ages are outside 10 to 99 or the wrong way round.</response>
     /// <response code="401">Nobody is logged in.</response>
@@ -130,6 +131,7 @@ public class CategoriesController : ControllerBase
     /// The new age range must still include the age, on the event date, of every participant already enrolled in the category.
     /// </remarks>
     /// <param name="id">The category's ID.</param>
+    /// <param name="request">The category's new name, minimum age and optional maximum age.</param>
     /// <response code="200">The updated category.</response>
     /// <response code="400">A field is missing, or the ages are outside 10 to 99 or the wrong way round.</response>
     /// <response code="401">Nobody is logged in.</response>

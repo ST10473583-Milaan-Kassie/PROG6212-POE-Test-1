@@ -66,6 +66,7 @@ public class UsersController : ControllerBase
     /// The date of birth and email cannot be changed through the profile, and are ignored if sent.
     /// A blank phone number clears it. Sending details that have not changed still succeeds.
     /// </remarks>
+    /// <param name="request">The new first name, last name and optional phone number.</param>
     /// <response code="200">The updated profile.</response>
     /// <response code="400">A field is missing or invalid.</response>
     /// <response code="401">Nobody is logged in.</response>
@@ -109,6 +110,7 @@ public class UsersController : ControllerBase
     /// It must be a JPG, PNG or WEBP file no larger than 5 MB, and its contents are checked to confirm it is a real image.
     /// Any previous profile picture is deleted from storage.
     /// </remarks>
+    /// <param name="request">The image, sent in the File field.</param>
     /// <response code="200">The updated profile, with the new picture's URL.</response>
     /// <response code="400">The file is missing, larger than 5 MB, not a JPG, PNG or WEBP, or not a valid image.</response>
     /// <response code="401">Nobody is logged in.</response>
