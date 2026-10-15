@@ -30,13 +30,14 @@ public class EnrolmentsController : ControllerBase
     /// Enrols the logged-in Participant in an upcoming event, under the chosen category.
     /// </summary>
     /// <remarks>
-    /// Participants only. The category must belong to this event, and the participant's age on the event date must fall within its age range.
+    /// Participants only. The category must belong to this event. When the category has an age range, the participant's age on the event date must fall within it.
+    /// Categories with only a distance are open to every participant.
     /// Each participant can enrol only once per event. New enrolments start as Pending until the Organiser confirms them.
     /// </remarks>
     /// <param name="eventId">The event's ID.</param>
     /// <param name="request">The ID of the category to enrol under.</param>
     /// <response code="201">The enrolment was recorded.</response>
-    /// <response code="400">The event has already taken place, the category is not part of the event, or the participant's age is outside the category's range.</response>
+    /// <response code="400">The event has already taken place, the category is not part of the event, or the participant's age is outside the category's age range.</response>
     /// <response code="401">Nobody is logged in.</response>
     /// <response code="403">The logged-in user is not a Participant.</response>
     /// <response code="404">No event has this ID.</response>
@@ -84,6 +85,7 @@ public class EnrolmentsController : ControllerBase
         }
 
         //age gets checked on race day, not today
+        //distance only categories have no age range so everyone passes this
         var user = await _context.Users.SingleAsync(u => u.UserID == userId);
         if (!AgeHelper.IsAgeEligible(user.DateOfBirth, ev.EventDate, category.MinAge, category.MaxAge))
         {

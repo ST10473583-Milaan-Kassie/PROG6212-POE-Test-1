@@ -100,6 +100,7 @@ CREATE TABLE Events
 
 -- categories table
 -- categories belong to one event
+-- a category is defined by an age range, a distance, or both
 CREATE TABLE Categories 
 (
     CategoryID INT IDENTITY(1,1) PRIMARY KEY,
@@ -109,11 +110,15 @@ CREATE TABLE Categories
 
     CategoryName NVARCHAR(50) NOT NULL,
 
-    -- not null bcs there is always a min age
-    MinAge INT NOT NULL,
+    -- null for a distance only category, which is open to every age
+    MinAge INT NULL,
 
     -- null as there may be no max age
     MaxAge INT NULL, 
+
+    -- in km, null for an age only category
+    -- same (6,2) size as the event distance
+    Distance DECIMAL(6,2) NULL,
 
     -- FK constraints
     CONSTRAINT FK_Categories_Events FOREIGN KEY (EventID) REFERENCES Events(EventID),
@@ -121,8 +126,11 @@ CREATE TABLE Categories
     -- allows EventID and CategoryID to be referenced together by Enrolments
     CONSTRAINT UQ_Categories_EventCategory UNIQUE (EventID, CategoryID),
 
-    -- ensures the maximum age is not lower than the minimum age
-    CONSTRAINT CK_Categories_AgeRange CHECK (MaxAge IS NULL OR MaxAge >= MinAge)
+    -- ensures a maximum age has a minimum age to go with it, and is not lower than it
+    CONSTRAINT CK_Categories_AgeRange CHECK (MaxAge IS NULL OR (MinAge IS NOT NULL AND MaxAge >= MinAge)),
+
+    -- ensures every category has an age range, a distance, or both
+    CONSTRAINT CK_Categories_AgeOrDistance CHECK (MinAge IS NOT NULL OR Distance IS NOT NULL)
 );
 
 
@@ -206,14 +214,17 @@ INSERT INTO Events (EventName, EventTypeID, UserID, Description, EventDate, Loca
 ('Durban Beachfront Park Run', 2, 1, 'Casual weekly walk along the Durban beachfront.', '2027-01-16', 'Durban', 5.00,  NULL);
 
 
--- categories, 6 inserts, a couple per event, mix of age based and open
-INSERT INTO Categories (EventID, CategoryName, MinAge, MaxAge) VALUES
-(1, 'Senior',  20, 39),
-(1, 'Veteran', 40, 59),
-(2, 'Open',    18, 49),
-(2, 'Masters', 50, 65),
-(3, 'Junior',  10, 17),
-(3, 'Open',    18, NULL);
+-- categories, 8 inserts, a couple per event, mix of age based, distance based and open
+-- Fun Ride is distance only, Junior 2.5km has both, the rest are age only
+INSERT INTO Categories (EventID, CategoryName, MinAge, MaxAge, Distance) VALUES
+(1, 'Senior',       20,   39,   NULL),
+(1, 'Veteran',      40,   59,   NULL),
+(2, 'Open',         18,   49,   NULL),
+(2, 'Masters',      50,   65,   NULL),
+(3, 'Junior',       10,   17,   NULL),
+(3, 'Open',         18,   NULL, NULL),
+(2, 'Fun Ride',     NULL, NULL, 47.00),
+(3, 'Junior 2.5km', 10,   17,   2.50);
 
 
 -- enrolments, 4 inserts, these are participants entering the events above

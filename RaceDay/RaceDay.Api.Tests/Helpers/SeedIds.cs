@@ -19,11 +19,13 @@ public static class SeedIds
     public const int CapeTownCycleTour = 2;
     public const int DurbanParkRun = 3;
 
-    //categories, two per event
+    //categories, two per event, plus a distance only one for cape town and an age and distance one for the park run
     public const int ComradesSenior = 1;
     public const int ComradesVeteran = 2;
     public const int CapeTownOpen = 3;
     public const int CapeTownMasters = 4;
     public const int ParkRunJunior = 5;
     public const int ParkRunOpen = 6;
+    public const int CapeTownFunRide = 7;
+    public const int ParkRunJunior2Point5Km = 8;
 }

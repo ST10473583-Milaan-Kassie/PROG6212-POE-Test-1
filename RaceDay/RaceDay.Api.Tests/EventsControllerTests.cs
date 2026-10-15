@@ -278,6 +278,43 @@ public class EventsControllerTests
         Assert.Equal(new DateOnly(2027, 1, 16), context.Events.Single(e => e.EventID == SeedIds.DurbanParkRun).EventDate);
     }
 
+    [Fact]
+    public async Task UpdateEvent_ShortenedToLongestCategory_Returns200()
+    {
+        using var context = TestDbContextFactory.Create();
+        var controller = CreateController(context);
+        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+
+        //the park runs longest category is junior 2.5km, so 2.5km is as short as the event can go
+        var request = ParkRunRequest(new DateOnly(2027, 1, 16));
+        request.Distance = 2.50m;
+
+        var result = await controller.UpdateEvent(SeedIds.DurbanParkRun, request);
+
+        Assert.Equal(StatusCodes.Status200OK, ResultHelper.GetStatusCode(result));
+    }
+
+    [Fact]
+    public async Task UpdateEvent_ShorterThanACategory_Returns409()
+    {
+        using var context = TestDbContextFactory.Create();
+        var controller = CreateController(context);
+        ControllerTestHelper.LogInAs(controller, SeedIds.Trevor, RoleNames.Organiser);
+
+        //2km would make the event shorter than its junior 2.5km category
+        var request = ParkRunRequest(new DateOnly(2027, 1, 16));
+        request.Distance = 2.00m;
+
+        var result = await controller.UpdateEvent(SeedIds.DurbanParkRun, request);
+
+        Assert.Equal(StatusCodes.Status409Conflict, ResultHelper.GetStatusCode(result));
+        Assert.Equal("This change would leave 1 category longer than the event's distance.", ResultHelper.GetMessage(result));
+
+        //the distance didnt change
+        context.ChangeTracker.Clear();
+        Assert.Equal(5.00m, context.Events.Single(e => e.EventID == SeedIds.DurbanParkRun).Distance);
+    }
+
     //delete
 
     [Fact]
@@ -291,7 +328,7 @@ public class EventsControllerTests
 
         Assert.IsType<NoContentResult>(result);
 
-        //the park run, its 2 categories and carmillas enrolment are all gone
+        //the park run, its 3 categories and carmillas enrolment are all gone
         context.ChangeTracker.Clear();
         Assert.DoesNotContain(context.Events, e => e.EventID == SeedIds.DurbanParkRun);
         Assert.DoesNotContain(context.Categories, c => c.EventID == SeedIds.DurbanParkRun);
@@ -299,7 +336,7 @@ public class EventsControllerTests
 
         //the other events werent touched
         Assert.Equal(2, context.Events.Count());
-        Assert.Equal(4, context.Categories.Count());
+        Assert.Equal(5, context.Categories.Count());
         Assert.Equal(3, context.Enrolments.Count());
     }
 

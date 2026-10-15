@@ -110,14 +110,17 @@ public static class SeedData
             }
         );
 
-        //categories, a couple per event, mix of age based and open
+        //categories, a couple per event, mix of age based, distance based and open
+        //7 is distance only and 8 is both, the rest are age only
         modelBuilder.Entity<Category>().HasData(
             new Category { CategoryID = 1, EventID = 1, CategoryName = "Senior", MinAge = 20, MaxAge = 39 },
             new Category { CategoryID = 2, EventID = 1, CategoryName = "Veteran", MinAge = 40, MaxAge = 59 },
             new Category { CategoryID = 3, EventID = 2, CategoryName = "Open", MinAge = 18, MaxAge = 49 },
             new Category { CategoryID = 4, EventID = 2, CategoryName = "Masters", MinAge = 50, MaxAge = 65 },
             new Category { CategoryID = 5, EventID = 3, CategoryName = "Junior", MinAge = 10, MaxAge = 17 },
-            new Category { CategoryID = 6, EventID = 3, CategoryName = "Open", MinAge = 18, MaxAge = null }
+            new Category { CategoryID = 6, EventID = 3, CategoryName = "Open", MinAge = 18, MaxAge = null },
+            new Category { CategoryID = 7, EventID = 2, CategoryName = "Fun Ride", MinAge = null, MaxAge = null, Distance = 47.00m },
+            new Category { CategoryID = 8, EventID = 3, CategoryName = "Junior 2.5km", MinAge = 10, MaxAge = 17, Distance = 2.50m }
         );
 
         //enrolments, participants entering the events above

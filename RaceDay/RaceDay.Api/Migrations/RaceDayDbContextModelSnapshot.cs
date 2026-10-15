@@ -35,13 +35,17 @@ namespace RaceDay.Api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<decimal?>("Distance")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
                     b.Property<int>("EventID")
                         .HasColumnType("int");
 
                     b.Property<int?>("MaxAge")
                         .HasColumnType("int");
 
-                    b.Property<int>("MinAge")
+                    b.Property<int?>("MinAge")
                         .HasColumnType("int");
 
                     b.HasKey("CategoryID");
@@ -51,7 +55,9 @@ namespace RaceDay.Api.Migrations
 
                     b.ToTable("Categories", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Categories_AgeRange", "MaxAge IS NULL OR MaxAge >= MinAge");
+                            t.HasCheckConstraint("CK_Categories_AgeOrDistance", "MinAge IS NOT NULL OR Distance IS NOT NULL");
+
+                            t.HasCheckConstraint("CK_Categories_AgeRange", "MaxAge IS NULL OR (MinAge IS NOT NULL AND MaxAge >= MinAge)");
                         });
 
                     b.HasData(
@@ -101,6 +107,22 @@ namespace RaceDay.Api.Migrations
                             CategoryName = "Open",
                             EventID = 3,
                             MinAge = 18
+                        },
+                        new
+                        {
+                            CategoryID = 7,
+                            CategoryName = "Fun Ride",
+                            Distance = 47.00m,
+                            EventID = 2
+                        },
+                        new
+                        {
+                            CategoryID = 8,
+                            CategoryName = "Junior 2.5km",
+                            Distance = 2.50m,
+                            EventID = 3,
+                            MaxAge = 17,
+                            MinAge = 10
                         });
                 });
 

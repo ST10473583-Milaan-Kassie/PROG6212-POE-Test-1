@@ -121,12 +121,20 @@ public class RaceDayDbContext : DbContext
         //categories table
         modelBuilder.Entity<Category>(entity =>
         {
-            //ensures the max age is not lower than the min age
-            entity.ToTable("Categories", t => t.HasCheckConstraint(
-                "CK_Categories_AgeRange", "MaxAge IS NULL OR MaxAge >= MinAge"));
+            entity.ToTable("Categories", t =>
+            {
+                //a max age needs a min age, and cant be lower than it
+                t.HasCheckConstraint("CK_Categories_AgeRange", "MaxAge IS NULL OR (MinAge IS NOT NULL AND MaxAge >= MinAge)");
+
+                //every category needs an age range, a distance, or both
+                t.HasCheckConstraint("CK_Categories_AgeOrDistance", "MinAge IS NOT NULL OR Distance IS NOT NULL");
+            });
             entity.HasKey(c => c.CategoryID);
 
             entity.Property(c => c.CategoryName).HasMaxLength(50);
+
+            //same size as the event distance, 9999.99 is the max
+            entity.Property(c => c.Distance).HasPrecision(6, 2);
 
             //allows EventID and CategoryID to be referenced together by enrolments
             //has to be here since the enrolments fk below cant exist without it

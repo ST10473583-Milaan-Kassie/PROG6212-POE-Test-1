@@ -18,7 +18,7 @@ public class TestSetupTests
         Assert.Equal(4, context.Users.Count());
         Assert.Equal(3, context.EventTypes.Count());
         Assert.Equal(3, context.Events.Count());
-        Assert.Equal(6, context.Categories.Count());
+        Assert.Equal(8, context.Categories.Count());
         Assert.Equal(4, context.Enrolments.Count());
         Assert.Equal(2, context.Results.Count());
     }

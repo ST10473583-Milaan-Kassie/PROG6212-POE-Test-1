@@ -246,6 +246,7 @@ public class EventsController : ControllerBase
     /// <remarks>
     /// Organisers only, and only for their own events. An event cannot be changed once it has taken place, and race day counts.
     /// The new date must be after today. If the date changes, every enrolled participant's age on the new date must still fit their category.
+    /// The new distance cannot be shorter than any of the event's categories that have a distance.
     /// </remarks>
     /// <param name="id">The event's ID.</param>
     /// <param name="request">The event's details. Every field is sent, including any that have not changed.</param>
@@ -254,7 +255,7 @@ public class EventsController : ControllerBase
     /// <response code="401">Nobody is logged in.</response>
     /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
     /// <response code="404">No event has this ID.</response>
-    /// <response code="409">The event has already taken place, or the new date would leave enrolments outside their category's age range.</response>
+    /// <response code="409">The event has already taken place, the new date would leave enrolments outside their category's age range, or the new distance is shorter than one of its categories.</response>
     [ProducesResponseType<EventResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
@@ -323,6 +324,21 @@ public class EventsController : ControllerBase
             {
                 var participants = outsideRange == 1 ? "participant" : "participants";
                 return Conflict(new { message = $"This change would leave {outsideRange} enrolled {participants} outside their category's age range." });
+            }
+        }
+
+        //a category cant be longer than its event, so the event cant be shortened below any of its categories
+        //only checked when the distance is getting shorter, categories with no distance never count
+        var newDistance = request.Distance!.Value;
+        if (newDistance < ev.Distance)
+        {
+            var longerCategories = await _context.Categories
+                .CountAsync(c => c.EventID == ev.EventID && c.Distance > newDistance);
+
+            if (longerCategories > 0)
+            {
+                var categories = longerCategories == 1 ? "category" : "categories";
+                return Conflict(new { message = $"This change would leave {longerCategories} {categories} longer than the event's distance." });
             }
         }
 

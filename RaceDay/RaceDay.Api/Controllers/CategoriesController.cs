@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Globalization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
 using RaceDay.Api.Dtos;
@@ -30,7 +31,10 @@ public class CategoriesController : ControllerBase
     /// Lists the categories for an event.
     /// </summary>
     /// <remarks>
-    /// No login is required. Categories are returned youngest first. A maxAge of null means there is no maximum age.
+    /// No login is required. A category has an age range, a distance, or both.
+    /// A minAge of null means the category is open to every age, a maxAge of null means there is no maximum age,
+    /// and a distance of null means the category is not tied to a distance.
+    /// Categories are returned by minimum age, with categories open to every age first, then by distance.
     /// </remarks>
     /// <param name="eventId">The event's ID.</param>
     /// <response code="200">The event's categories.</response>
@@ -47,10 +51,11 @@ public class CategoriesController : ControllerBase
             return NotFound(new { message = "Event not found." });
         }
 
-        //youngest categories first
+        //youngest categories first, categories open to every age come first since their min age is null, then by distance
         var categories = await _context.Categories
             .Where(c => c.EventID == eventId)
             .OrderBy(c => c.MinAge)
+            .ThenBy(c => c.Distance)
             .ThenBy(c => c.CategoryID)
             .ToListAsync();
 
@@ -62,12 +67,14 @@ public class CategoriesController : ControllerBase
     /// </summary>
     /// <remarks>
     /// Organisers only, and only for their own events. Categories cannot be added once the event has taken place.
-    /// The minimum age must be between 10 and 99. The maximum age is optional, but when set it must be between the minimum age and 99.
+    /// A category must have an age range, a distance, or both. When an age range is used, the minimum age must be between 10 and 99,
+    /// and the maximum age is optional, but when set it must be between the minimum age and 99. A maximum age cannot be sent without a minimum age.
+    /// When a distance is used, it must be between 0.01 and 9999.99 km, with at most 2 decimal places, and cannot be longer than the event's distance.
     /// </remarks>
     /// <param name="eventId">The event's ID.</param>
-    /// <param name="request">The category's name, minimum age and optional maximum age.</param>
+    /// <param name="request">The category's name, with an age range (minAge and optional maxAge), a distance, or both.</param>
     /// <response code="201">The category was added.</response>
-    /// <response code="400">A field is missing, or the ages are outside 10 to 99 or the wrong way round.</response>
+    /// <response code="400">A field is missing, neither an age range nor a distance was sent, the ages break the age rules, or the distance is invalid or longer than the event's distance.</response>
     /// <response code="401">Nobody is logged in.</response>
     /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
     /// <response code="404">No event has this ID.</response>
@@ -103,18 +110,19 @@ public class CategoriesController : ControllerBase
             return Conflict(new { message = "This event has already taken place, so its categories can no longer be changed." });
         }
 
-        var ageError = ValidateAges(request);
-        if (ageError != null)
+        var categoryError = ValidateCategoryDetails(request, ev.Distance);
+        if (categoryError != null)
         {
-            return ageError;
+            return categoryError;
         }
 
         var category = new Category
         {
             EventID = eventId,
             CategoryName = request.CategoryName.Trim(),
-            MinAge = request.MinAge!.Value,
-            MaxAge = request.MaxAge
+            MinAge = request.MinAge,
+            MaxAge = request.MaxAge,
+            Distance = request.Distance
         };
 
         _context.Categories.Add(category);
@@ -127,13 +135,14 @@ public class CategoriesController : ControllerBase
     /// Updates a category on the logged-in Organiser's own upcoming event.
     /// </summary>
     /// <remarks>
-    /// Organisers only, and only for their own events. The same age rules apply as when adding a category.
+    /// Organisers only, and only for their own events. The same age and distance rules apply as when adding a category.
     /// The new age range must still include the age, on the event date, of every participant already enrolled in the category.
+    /// Removing the age range makes the category open to every age, so it never leaves an enrolment outside it.
     /// </remarks>
     /// <param name="id">The category's ID.</param>
-    /// <param name="request">The category's new name, minimum age and optional maximum age.</param>
+    /// <param name="request">The category's new name, with an age range (minAge and optional maxAge), a distance, or both.</param>
     /// <response code="200">The updated category.</response>
-    /// <response code="400">A field is missing, or the ages are outside 10 to 99 or the wrong way round.</response>
+    /// <response code="400">A field is missing, neither an age range nor a distance was sent, the ages break the age rules, or the distance is invalid or longer than the event's distance.</response>
     /// <response code="401">Nobody is logged in.</response>
     /// <response code="403">The logged-in user is not an Organiser, or the event belongs to another Organiser.</response>
     /// <response code="404">No category has this ID.</response>
@@ -170,10 +179,10 @@ public class CategoriesController : ControllerBase
             return Conflict(new { message = "This event has already taken place, so its categories can no longer be changed." });
         }
 
-        var ageError = ValidateAges(request);
-        if (ageError != null)
+        var categoryError = ValidateCategoryDetails(request, category.Event.Distance);
+        if (categoryError != null)
         {
-            return ageError;
+            return categoryError;
         }
 
         //everyone already enrolled in this category has to still fit the new range on the event date
@@ -183,7 +192,7 @@ public class CategoriesController : ControllerBase
             .ToListAsync();
 
         var outsideRange = enrolledBirthDates.Count(dob =>
-            !AgeHelper.IsAgeEligible(dob, category.Event.EventDate, request.MinAge!.Value, request.MaxAge));
+            !AgeHelper.IsAgeEligible(dob, category.Event.EventDate, request.MinAge, request.MaxAge));
 
         if (outsideRange > 0)
         {
@@ -192,8 +201,9 @@ public class CategoriesController : ControllerBase
         }
 
         category.CategoryName = request.CategoryName.Trim();
-        category.MinAge = request.MinAge!.Value;
+        category.MinAge = request.MinAge;
         category.MaxAge = request.MaxAge;
+        category.Distance = request.Distance;
 
         await _context.SaveChangesAsync();
 
@@ -254,11 +264,46 @@ public class CategoriesController : ControllerBase
         return NoContent();
     }
 
-    //category ages have to fit inside the registration age limits, 10 to 99
-    private BadRequestObjectResult? ValidateAges(CategoryRequest request)
+    //checks the parts of a category request that the annotations cant, used by add and update
+    //a category needs an age range, a distance, or both
+    private BadRequestObjectResult? ValidateCategoryDetails(CategoryRequest request, decimal eventDistance)
     {
-        var minAge = request.MinAge!.Value;
+        //same rule as CK_Categories_AgeOrDistance in the SQL, checked here so it comes back as a 400 instead of a database error
+        if (request.MinAge == null && request.Distance == null)
+        {
+            return BadRequest(new { message = "A category must have an age range, a distance, or both." });
+        }
 
+        //same rule as CK_Categories_AgeRange in the SQL, a max age on its own isnt a range
+        if (request.MinAge == null && request.MaxAge != null)
+        {
+            return BadRequest(new { message = "A maximum age needs a minimum age to go with it." });
+        }
+
+        if (request.MinAge != null)
+        {
+            var ageError = ValidateAges(request.MinAge.Value, request.MaxAge);
+            if (ageError != null)
+            {
+                return ageError;
+            }
+        }
+
+        if (request.Distance != null)
+        {
+            var distanceError = ValidateDistance(request.Distance.Value, eventDistance);
+            if (distanceError != null)
+            {
+                return distanceError;
+            }
+        }
+
+        return null;
+    }
+
+    //category ages have to fit inside the registration age limits, 10 to 99
+    private BadRequestObjectResult? ValidateAges(int minAge, int? maxAge)
+    {
         //maximumage is the age nobody can reach, so the oldest allowed is one less
         var oldestAllowed = AgeLimits.MaximumAge - 1;
 
@@ -267,18 +312,42 @@ public class CategoriesController : ControllerBase
             return BadRequest(new { message = $"Minimum age must be between {AgeLimits.MinimumParticipantAge} and {oldestAllowed}." });
         }
 
-        if (request.MaxAge.HasValue)
+        if (maxAge.HasValue)
         {
-            //same rule as CK_Categories_AgeRange in the sql, checked here so it comes back as a 400 instead of a database error
-            if (request.MaxAge.Value < minAge)
+            //same rule as CK_Categories_AgeRange in the SQL, checked here so it comes back as a 400 instead of a database error
+            if (maxAge.Value < minAge)
             {
                 return BadRequest(new { message = "Maximum age cannot be lower than the minimum age." });
             }
 
-            if (request.MaxAge.Value > oldestAllowed)
+            if (maxAge.Value > oldestAllowed)
             {
                 return BadRequest(new { message = $"Maximum age cannot be more than {oldestAllowed}." });
             }
+        }
+
+        return null;
+    }
+
+    //same distance rules as an event, plus it cant be longer than the event itself
+    private BadRequestObjectResult? ValidateDistance(decimal distance, decimal eventDistance)
+    {
+        //has to fit DECIMAL(6,2), above 0 and 9999.99 at most
+        if (distance <= 0 || distance > 9999.99m)
+        {
+            return BadRequest(new { message = "Distance must be between 0.01 and 9999.99 km." });
+        }
+
+        //SQL would quietly round anything past 2 decimals so its rejected instead
+        if (decimal.Round(distance, 2) != distance)
+        {
+            return BadRequest(new { message = "Distance can have at most 2 decimal places." });
+        }
+
+        //invariant culture so the decimal point is always a dot, a south african pc would show a comma otherwise
+        if (distance > eventDistance)
+        {
+            return BadRequest(new { message = $"Category distance cannot be longer than the event's distance of {eventDistance.ToString("0.00", CultureInfo.InvariantCulture)} km." });
         }
 
         return null;

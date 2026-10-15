@@ -19,11 +19,18 @@ public static class AgeHelper
 
     //checks if someone fits a category's age range on the event date
     //used when enrolling and when a category or event date changes, so its always worked out the same way
-    public static bool IsAgeEligible(DateOnly dateOfBirth, DateOnly eventDate, int minAge, int? maxAge)
+    public static bool IsAgeEligible(DateOnly dateOfBirth, DateOnly eventDate, int? minAge, int? maxAge)
     {
+        //no min age means its a distance only category, anyone can enter
+        //registration already makes sure everyone is at least 10
+        if (minAge == null)
+        {
+            return true;
+        }
+
         var age = GetAgeOn(dateOfBirth, eventDate);
 
         //no max age means anyone at or above the min age fits
-        return age >= minAge && (maxAge == null || age <= maxAge.Value);
+        return age >= minAge.Value && (maxAge == null || age <= maxAge.Value);
     }
 }

@@ -182,6 +182,25 @@ public class EnrolmentsControllerTests
         Assert.Equal(StatusCodes.Status201Created, ResultHelper.GetStatusCode(result));
     }
 
+    [Fact]
+    public async Task Enrol_DistanceOnlyCategory_AnyAgeCanEnter()
+    {
+        using var context = TestDbContextFactory.Create();
+
+        //12 on the day of cape town, too young for open (18 to 49) but the fun ride has no age range
+        var participantId = TestUsers.AddParticipant(context, new DateOnly(2014, 6, 1));
+        var controller = CreateController(context);
+        ControllerTestHelper.LogInAs(controller, participantId, RoleNames.Participant);
+
+        var result = await controller.Enrol(SeedIds.CapeTownCycleTour, new EnrolmentRequest { CategoryID = SeedIds.CapeTownFunRide });
+
+        var created = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(StatusCodes.Status201Created, created.StatusCode);
+
+        var response = Assert.IsType<EnrolmentResponse>(created.Value);
+        Assert.Equal("Fun Ride", response.CategoryName);
+    }
+
     //withdraw
 
     [Fact]
