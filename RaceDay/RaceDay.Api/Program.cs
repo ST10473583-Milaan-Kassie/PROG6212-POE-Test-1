@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Azure.Storage.Blobs;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
 using RaceDay.Api.Helpers;
@@ -33,6 +34,11 @@ builder.Services.AddSwaggerGen();
 //registers the dbcontext, the connection string comes from appsettings.json
 builder.Services.AddDbContext<RaceDayDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("RaceDayConnection")));
+
+//blob storage for uploaded images, azurite locally, only the connection string changes for real azure in part 3
+//the client is a singleton bcs its safe to share and reuses its connections
+builder.Services.AddSingleton(new BlobServiceClient(builder.Configuration.GetConnectionString("BlobStorage")));
+builder.Services.AddScoped<IFileStorageService, BlobStorageService>();
 
 //the real system clock, and the south african clock that uses it
 //singletons bcs one copy is shared by the whole app
