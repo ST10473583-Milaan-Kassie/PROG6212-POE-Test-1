@@ -68,7 +68,7 @@ public class RoleAccessTests
     }
 
     [Fact]
-    public async Task Filter_RoleButNoUserId_Returns401()
+    public async Task Filter_RoleButNoUserID_Returns401()
     {
         var filter = new SessionAuthorizeAttribute();
 
@@ -129,6 +129,7 @@ public class RoleAccessTests
     [InlineData(typeof(EnrolmentsController), nameof(EnrolmentsController.UpdateEnrolmentStatus))]
     [InlineData(typeof(ResultsController), nameof(ResultsController.CaptureResult))]
     [InlineData(typeof(ResultsController), nameof(ResultsController.GetEventResults))]
+    [InlineData(typeof(ResultsController), nameof(ResultsController.PublishResults))]
     public async Task OrganiserEndpoints_RejectParticipants_AndAllowOrganisers(Type controllerType, string methodName)
     {
         var filter = GetEndpointFilter(controllerType, methodName);
@@ -198,6 +199,7 @@ public class RoleAccessTests
     [InlineData(typeof(EnrolmentsController), nameof(EnrolmentsController.UpdateEnrolmentStatus))]
     [InlineData(typeof(ResultsController), nameof(ResultsController.CaptureResult))]
     [InlineData(typeof(ResultsController), nameof(ResultsController.GetEventResults))]
+    [InlineData(typeof(ResultsController), nameof(ResultsController.PublishResults))]
     [InlineData(typeof(ResultsController), nameof(ResultsController.GetMyResults))]
     public async Task ProtectedEndpoints_RejectNotLoggedIn_With401(Type controllerType, string methodName)
     {

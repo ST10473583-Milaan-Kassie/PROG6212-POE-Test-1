@@ -73,6 +73,7 @@ public static class SeedData
         );
 
         //events, comrades already happened this year, the other two are still upcoming
+        //comrades results are captured but not published yet, so publishing can be shown
         //the m on the distance makes it a decimal
         modelBuilder.Entity<Event>().HasData(
             new Event
@@ -84,7 +85,8 @@ public static class SeedData
                 Description = "Iconic ultra marathon between Pietermaritzburg and Durban.",
                 EventDate = new DateOnly(2026, 6, 14),
                 Location = "Pietermaritzburg to Durban",
-                Distance = 87.70m
+                Distance = 87.70m,
+                ResultsPublished = false
             },
             new Event
             {

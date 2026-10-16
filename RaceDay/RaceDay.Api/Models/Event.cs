@@ -29,6 +29,9 @@ public class Event
     //null until the organiser uploads one
     public string? BannerImageURL { get; set; }
 
+    //false until the organiser publishes the results, participants only see results once its true
+    public bool ResultsPublished { get; set; }
+
     //the type this event is, EF fills this in
     public EventType EventType { get; set; } = null!;
 

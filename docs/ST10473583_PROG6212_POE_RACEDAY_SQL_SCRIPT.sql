@@ -92,6 +92,9 @@ CREATE TABLE Events
     --null for now cause its empty until they upload one
     BannerImageURL NVARCHAR(255) NULL,
 
+    -- 0 until the organiser publishes the results, participants only see results once its 1
+    ResultsPublished BIT NOT NULL DEFAULT 0,
+
     -- FK constraints
     CONSTRAINT FK_Events_EventType FOREIGN KEY (EventTypeID) REFERENCES EventType(EventTypeID),
     CONSTRAINT FK_Events_Users FOREIGN KEY (UserID) REFERENCES Users(UserID)
@@ -208,6 +211,7 @@ INSERT INTO Users (RoleID, FirstName, LastName, DateOfBirth, Email, PhoneNumber,
 
 -- events, 3 inserts
 -- comrades already happened this year, the other two are still upcoming
+-- ResultsPublished is left at its default of 0, comrades results are captured but not published yet
 INSERT INTO Events (EventName, EventTypeID, UserID, Description, EventDate, Location, Distance, BannerImageURL) VALUES
 ('Comrades Marathon', 1, 1, 'Iconic ultra marathon between Pietermaritzburg and Durban.', '2026-06-14', 'Pietermaritzburg to Durban', 87.70, NULL),
 ('Cape Town Cycle Tour', 3, 2, 'Scenic cycle race around the Cape Peninsula.', '2027-03-08', 'Cape Town', 109.00, NULL),

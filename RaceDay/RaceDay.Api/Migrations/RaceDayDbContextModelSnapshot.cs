@@ -231,6 +231,9 @@ namespace RaceDay.Api.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<bool>("ResultsPublished")
+                        .HasColumnType("bit");
+
                     b.Property<int>("UserID")
                         .HasColumnType("int");
 
@@ -248,6 +251,7 @@ namespace RaceDay.Api.Migrations
                             EventName = "Comrades Marathon",
                             EventTypeID = 1,
                             Location = "Pietermaritzburg to Durban",
+                            ResultsPublished = false,
                             UserID = 1
                         },
                         new
@@ -259,6 +263,7 @@ namespace RaceDay.Api.Migrations
                             EventName = "Cape Town Cycle Tour",
                             EventTypeID = 3,
                             Location = "Cape Town",
+                            ResultsPublished = false,
                             UserID = 2
                         },
                         new
@@ -270,6 +275,7 @@ namespace RaceDay.Api.Migrations
                             EventName = "Durban Beachfront Park Run",
                             EventTypeID = 2,
                             Location = "Durban",
+                            ResultsPublished = false,
                             UserID = 1
                         });
                 });

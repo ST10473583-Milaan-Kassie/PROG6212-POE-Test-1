@@ -16,7 +16,13 @@ public class EventsControllerTests
     //the events controller with the test clock, fake storage and a fake session, nobody logged in yet
     private static EventsController CreateController(RaceDayDbContext context)
     {
-        var controller = new EventsController(context, TestClock.Default(), new FakeFileStorageService());
+        return CreateController(context, new FakeFileStorageService());
+    }
+
+    //same thing but the storage gets passed in, so the banner tests can check what was uploaded
+    private static EventsController CreateController(RaceDayDbContext context, FakeFileStorageService storage)
+    {
+        var controller = new EventsController(context, TestClock.Default(), storage);
         ControllerTestHelper.AttachSession(controller);
         return controller;
     }
@@ -411,6 +417,28 @@ public class EventsControllerTests
         //comrades has alucard and carmilla, the park run has carmilla
         Assert.Equal(2, events[0].TotalEnrolments);
         Assert.Equal(1, events[1].TotalEnrolments);
+
+        //all three of those enrolments are confirmed
+        Assert.Equal(2, events[0].ConfirmedEnrolments);
+        Assert.Equal(1, events[1].ConfirmedEnrolments);
+    }
+
+    [Fact]
+    public async Task GetMyEvents_PendingEnrolment_CountsInTotalButNotConfirmed()
+    {
+        using var context = TestDbContextFactory.Create();
+        var controller = CreateController(context);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Sypha, RoleNames.Organiser);
+
+        var result = await controller.GetMyEvents();
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var capeTown = Assert.Single(Assert.IsAssignableFrom<IEnumerable<EventResponse>>(ok.Value));
+
+        //alucards cape town enrolment is still pending
+        Assert.Equal(SeedIDs.CapeTownCycleTour, capeTown.EventID);
+        Assert.Equal(1, capeTown.TotalEnrolments);
+        Assert.Equal(0, capeTown.ConfirmedEnrolments);
     }
 
     [Fact]
@@ -449,5 +477,64 @@ public class EventsControllerTests
 
         Assert.Equal(2, events.Count);
         Assert.DoesNotContain(events, e => e.EventID == SeedIDs.ComradesMarathon);
+    }
+
+    //banner
+
+    [Fact]
+    public async Task UploadBanner_OwnEvent_Returns200AndSavesURL()
+    {
+        using var context = TestDbContextFactory.Create();
+        var storage = new FakeFileStorageService();
+        var controller = CreateController(context, storage);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
+
+        var result = await controller.UploadBanner(SeedIDs.DurbanParkRun, new ImageUploadRequest { File = TestFiles.Png("banner.png") });
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var response = Assert.IsType<EventResponse>(ok.Value);
+
+        //the URL storage gave back is the one sent back and saved
+        var uploadedURL = Assert.Single(storage.UploadedURLs);
+        Assert.Equal(uploadedURL, response.BannerImageURL);
+        Assert.StartsWith("https://storage.test/raceday-images/event-banners/", uploadedURL);
+
+        context.ChangeTracker.Clear();
+        Assert.Equal(uploadedURL, context.Events.Single(e => e.EventID == SeedIDs.DurbanParkRun).BannerImageURL);
+    }
+
+    [Fact]
+    public async Task UploadBanner_SomeoneElsesEvent_Returns403AndUploadsNothing()
+    {
+        using var context = TestDbContextFactory.Create();
+        var storage = new FakeFileStorageService();
+        var controller = CreateController(context, storage);
+
+        //sypha trying to put a banner on trevors park run
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Sypha, RoleNames.Organiser);
+
+        var result = await controller.UploadBanner(SeedIDs.DurbanParkRun, new ImageUploadRequest { File = TestFiles.Png("banner.png") });
+
+        Assert.Equal(StatusCodes.Status403Forbidden, ResultHelper.GetStatusCode(result));
+        Assert.Equal("You can only manage your own events.", ResultHelper.GetMessage(result));
+        Assert.Empty(storage.UploadedURLs);
+
+        context.ChangeTracker.Clear();
+        Assert.Null(context.Events.Single(e => e.EventID == SeedIDs.DurbanParkRun).BannerImageURL);
+    }
+
+    [Fact]
+    public async Task UploadBanner_NotAnImage_Returns400()
+    {
+        using var context = TestDbContextFactory.Create();
+        var storage = new FakeFileStorageService();
+        var controller = CreateController(context, storage);
+        ControllerTestHelper.LogInAs(controller, SeedIDs.Trevor, RoleNames.Organiser);
+
+        var result = await controller.UploadBanner(SeedIDs.DurbanParkRun, new ImageUploadRequest { File = TestFiles.Text() });
+
+        Assert.Equal(StatusCodes.Status400BadRequest, ResultHelper.GetStatusCode(result));
+        Assert.Equal("Only JPG, PNG, or WEBP images are allowed.", ResultHelper.GetMessage(result));
+        Assert.Empty(storage.UploadedURLs);
     }
 }

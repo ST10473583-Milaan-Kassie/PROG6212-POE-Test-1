@@ -25,9 +25,16 @@ public class EventResponse
     //worked out with the south african clock, race day counts as taken place
     public bool HasTakenPlace { get; set; }
 
+    //lets the front end know if the organiser can still publish the results
+    public bool ResultsPublished { get; set; }
+
     //only filled in for GET /api/events/mine, left out of the JSON everywhere else
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? TotalEnrolments { get; set; }
+
+    //also only for GET /api/events/mine, just the confirmed ones out of the total
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ConfirmedEnrolments { get; set; }
 
     //builds the response from an event, the eventtype and user have to be loaded first
     public static EventResponse FromEvent(Event ev, bool hasTakenPlace)
@@ -45,7 +52,8 @@ public class EventResponse
             Location = ev.Location,
             Distance = ev.Distance,
             BannerImageURL = ev.BannerImageURL,
-            HasTakenPlace = hasTakenPlace
+            HasTakenPlace = hasTakenPlace,
+            ResultsPublished = ev.ResultsPublished
         };
     }
 }

@@ -132,10 +132,10 @@ public class EventsController : ControllerBase
     }
 
     /// <summary>
-    /// Lists the logged-in Organiser's own events, with the total enrolments for each.
+    /// Lists the logged-in Organiser's own events, with the total and confirmed enrolments for each.
     /// </summary>
     /// <remarks>
-    /// Organisers only. totalEnrolments counts both Pending and Confirmed enrolments.
+    /// Organisers only. totalEnrolments counts both Pending and Confirmed enrolments, and confirmedEnrolments counts only the Confirmed ones.
     /// </remarks>
     /// <response code="200">The Organiser's events.</response>
     /// <response code="401">Nobody is logged in.</response>
@@ -144,7 +144,7 @@ public class EventsController : ControllerBase
     [ProducesResponseType<MessageResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<MessageResponse>(StatusCodes.Status403Forbidden)]
     //GET /api/events/mine
-    //the logged in organisers own events, with how many people have enrolled in each
+    //the logged in organisers own events, with how many people have enrolled in each and how many are confirmed
     [HttpGet("mine")]
     [SessionAuthorize(RoleNames.Organiser)]
     public async Task<IActionResult> GetMyEvents()
@@ -164,15 +164,22 @@ public class EventsController : ControllerBase
         var enrolmentCounts = await _context.Enrolments
             .Where(en => eventIDs.Contains(en.EventID))
             .GroupBy(en => en.EventID)
-            .Select(g => new { EventID = g.Key, Total = g.Count() })
-            .ToDictionaryAsync(g => g.EventID, g => g.Total);
+            .Select(g => new
+            {
+                EventID = g.Key,
+                Total = g.Count(),
+                Confirmed = g.Count(en => en.Status == EnrolmentStatuses.Confirmed)
+            })
+            .ToDictionaryAsync(g => g.EventID);
 
         var response = events.Select(ev =>
         {
             var eventResponse = EventResponse.FromEvent(ev, _clock.HasTakenPlace(ev.EventDate));
 
             //events with no enrolments arent in the dictionary so they get 0
-            eventResponse.TotalEnrolments = enrolmentCounts.GetValueOrDefault(ev.EventID);
+            var counts = enrolmentCounts.GetValueOrDefault(ev.EventID);
+            eventResponse.TotalEnrolments = counts?.Total ?? 0;
+            eventResponse.ConfirmedEnrolments = counts?.Confirmed ?? 0;
             return eventResponse;
         });
 
