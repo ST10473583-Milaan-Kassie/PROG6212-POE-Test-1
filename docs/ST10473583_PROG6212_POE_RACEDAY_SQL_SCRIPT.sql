@@ -89,11 +89,11 @@ CREATE TABLE Events
     -- (6,2) means 6 total digits, with 2 digits after the decimal point, so 9999.99 is the max
     Distance DECIMAL(6,2) NOT NULL, -- in km
 
-    --null for now cause its empty until they upload one
-    BannerImageURL NVARCHAR(255) NULL,
-
     -- 0 until the organiser publishes the results, participants only see results once its 1
     ResultsPublished BIT NOT NULL DEFAULT 0,
+
+    --null for now cause its empty until they upload one
+    BannerImageURL NVARCHAR(255) NULL,
 
     -- FK constraints
     CONSTRAINT FK_Events_EventType FOREIGN KEY (EventTypeID) REFERENCES EventType(EventTypeID),
