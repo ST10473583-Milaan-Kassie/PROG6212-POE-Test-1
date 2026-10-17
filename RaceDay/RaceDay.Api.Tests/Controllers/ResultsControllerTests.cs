@@ -6,9 +6,8 @@ using RaceDay.Api.DTOs.Requests;
 using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
-using RaceDay.Api.Tests.Helpers;
 
-namespace RaceDay.Api.Tests;
+namespace RaceDay.Api.Tests.Controllers;
 
 //organisers capturing, checking and publishing results, and participants viewing their own once theyre published
 //seed results: alucard 1st (enrolment 1) and carmilla 2nd (enrolment 2) at comrades, captured but not published yet

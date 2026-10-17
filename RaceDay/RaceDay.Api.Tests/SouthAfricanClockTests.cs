@@ -1,5 +1,4 @@
 ﻿using RaceDay.Api.Services;
-using RaceDay.Api.Tests.Helpers;
 
 namespace RaceDay.Api.Tests;
 

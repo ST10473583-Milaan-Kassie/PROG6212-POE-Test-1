@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Routing;
 using RaceDay.Api.Controllers;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
-using RaceDay.Api.Tests.Helpers;
 
 namespace RaceDay.Api.Tests;
 

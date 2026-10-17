@@ -2,9 +2,8 @@
 using RaceDay.Api.Controllers;
 using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Models;
-using RaceDay.Api.Tests.Helpers;
 
-namespace RaceDay.Api.Tests;
+namespace RaceDay.Api.Tests.Controllers;
 
 //event types is a read only lookup with one public endpoint, so theres nothing more to test than these two
 public class EventTypesControllerTests

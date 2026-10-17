@@ -6,9 +6,8 @@ using RaceDay.Api.DTOs.Requests;
 using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
-using RaceDay.Api.Tests.Helpers;
 
-namespace RaceDay.Api.Tests;
+namespace RaceDay.Api.Tests.Controllers;
 
 //participants enrolling and withdrawing, and organisers viewing and confirming enrolments
 //seed enrolments: 1 alucard comrades, 2 carmilla comrades (both with results), 3 alucard cape town (pending), 4 carmilla park run

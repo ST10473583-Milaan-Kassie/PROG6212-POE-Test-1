@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using RaceDay.Api.Services;
 
-namespace RaceDay.Api.Tests.Helpers;
+namespace RaceDay.Api.Tests.Fakes;
 
 //stands in for blob storage so the tests dont need azurite running
 //keeps a list of whats been uploaded and deleted so tests can check the controller called it properly

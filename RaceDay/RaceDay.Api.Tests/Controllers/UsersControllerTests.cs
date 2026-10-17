@@ -5,9 +5,8 @@ using RaceDay.Api.Data;
 using RaceDay.Api.DTOs.Requests;
 using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Helpers;
-using RaceDay.Api.Tests.Helpers;
 
-namespace RaceDay.Api.Tests;
+namespace RaceDay.Api.Tests.Controllers;
 
 //the logged in users own profile, viewing it, updating it and uploading a profile picture
 //none of the seed users have a profile picture yet

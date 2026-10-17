@@ -5,9 +5,8 @@ using RaceDay.Api.Data;
 using RaceDay.Api.DTOs.Requests;
 using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Helpers;
-using RaceDay.Api.Tests.Helpers;
 
-namespace RaceDay.Api.Tests;
+namespace RaceDay.Api.Tests.Controllers;
 
 //categories defined by an age range, a distance, or both
 //the park run is trevors and 5km long, cape town is syphas and 109km long

@@ -1,4 +1,4 @@
-﻿namespace RaceDay.Api.Tests.Helpers;
+﻿namespace RaceDay.Api.Tests.Fakes;
 
 //a clock thats stuck on whatever time the test gives it, so the date rules give the same answer every run
 public class FixedTimeProvider : TimeProvider

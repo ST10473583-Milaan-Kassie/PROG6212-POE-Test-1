@@ -5,9 +5,8 @@ using RaceDay.Api.Data;
 using RaceDay.Api.DTOs.Requests;
 using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Helpers;
-using RaceDay.Api.Tests.Helpers;
 
-namespace RaceDay.Api.Tests;
+namespace RaceDay.Api.Tests.Controllers;
 
 //register, login and logout, the ones that should work and the ones that should get turned away
 //the test date is 15 october 2026 (TestClock.DefaultToday), all the ages below are worked out from that

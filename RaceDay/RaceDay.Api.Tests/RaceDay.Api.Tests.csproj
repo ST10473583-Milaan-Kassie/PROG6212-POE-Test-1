@@ -17,6 +17,8 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="RaceDay.Api.Tests.Fakes" />
+    <Using Include="RaceDay.Api.Tests.Helpers" />
   </ItemGroup>
 
   <ItemGroup>

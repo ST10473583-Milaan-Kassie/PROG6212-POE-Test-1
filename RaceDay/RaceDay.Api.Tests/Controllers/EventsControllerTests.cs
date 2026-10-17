@@ -6,9 +6,8 @@ using RaceDay.Api.DTOs.Requests;
 using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;
-using RaceDay.Api.Tests.Helpers;
 
-namespace RaceDay.Api.Tests;
+namespace RaceDay.Api.Tests.Controllers;
 
 //organisers managing events, creating, updating, deleting and viewing their own
 //on the test date (15 october 2026) comrades has taken place, cape town (syphas) and the park run (trevors) are upcoming

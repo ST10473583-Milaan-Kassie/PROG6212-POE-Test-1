@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Http;
 
-namespace RaceDay.Api.Tests.Helpers;
+namespace RaceDay.Api.Tests.Fakes;
 
 //stands in for the real session, keeps everything in a dictionary instead of the servers memory cache
 //SetInt32, GetString etc still work on it bcs theyre built on top of Set and TryGetValue
