@@ -1,6 +1,6 @@
 ﻿using RaceDay.Api.Models;
 
-namespace RaceDay.Api.DTOs;
+namespace RaceDay.Api.DTOs.Responses;
 
 //what an organiser sees about each enrolment for their event
 //only the participants name goes out, their email, phone and dob arent needed here so theyre left out

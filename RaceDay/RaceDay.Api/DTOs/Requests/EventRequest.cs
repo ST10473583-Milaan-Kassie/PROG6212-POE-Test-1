@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RaceDay.Api.DTOs;
+namespace RaceDay.Api.DTOs.Requests;
 
 //what an organiser sends to create or update an event, matches the request body in the endpoint plan
 //no UserID on purpose, the organiser is always whoever is logged in

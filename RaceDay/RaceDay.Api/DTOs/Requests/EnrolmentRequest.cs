@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RaceDay.Api.DTOs;
+namespace RaceDay.Api.DTOs.Requests;
 
 //what a participant sends to enter an event, matches the request body in the endpoint plan
 //the event comes from the URL and the participant comes from the session

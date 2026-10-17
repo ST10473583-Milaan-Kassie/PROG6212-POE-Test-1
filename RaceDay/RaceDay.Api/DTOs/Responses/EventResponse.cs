@@ -1,7 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using RaceDay.Api.Models;
 
-namespace RaceDay.Api.DTOs;
+namespace RaceDay.Api.DTOs.Responses;
 
 //what gets sent back about an event
 //includes the type name and organiser name so the front end doesnt have to look them up

@@ -1,4 +1,4 @@
-﻿namespace RaceDay.Api.DTOs;
+﻿namespace RaceDay.Api.DTOs.Responses;
 
 //the shape every message and error comes back in, the endpoints build it as { message } or { message, errors }
 //this class is mainly here so swagger can show that shape on each response

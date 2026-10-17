@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using RaceDay.Api.Controllers;
 using RaceDay.Api.Data;
-using RaceDay.Api.DTOs;
+using RaceDay.Api.DTOs.Requests;
+using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Tests.Helpers;
 

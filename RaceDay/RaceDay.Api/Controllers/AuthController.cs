@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Data;
-using RaceDay.Api.DTOs;
+using RaceDay.Api.DTOs.Requests;
+using RaceDay.Api.DTOs.Responses;
 using RaceDay.Api.Filters;
 using RaceDay.Api.Helpers;
 using RaceDay.Api.Models;

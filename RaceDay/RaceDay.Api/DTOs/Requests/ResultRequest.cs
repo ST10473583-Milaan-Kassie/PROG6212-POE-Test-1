@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RaceDay.Api.DTOs;
+namespace RaceDay.Api.DTOs.Requests;
 
 //what an organiser sends to capture a result, matches the request body in the endpoint plan
 public class ResultRequest

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RaceDay.Api.DTOs;
+namespace RaceDay.Api.DTOs.Requests;
 
 //what an organiser sends to add or update a category, matches the request body in the endpoint plan
 //age range, distance or both, the controller checks at least one was sent

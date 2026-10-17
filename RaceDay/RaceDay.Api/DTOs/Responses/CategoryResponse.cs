@@ -1,6 +1,6 @@
 ﻿using RaceDay.Api.Models;
 
-namespace RaceDay.Api.DTOs;
+namespace RaceDay.Api.DTOs.Responses;
 
 //what gets sent back about a category
 public class CategoryResponse

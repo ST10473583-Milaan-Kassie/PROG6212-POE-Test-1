@@ -1,6 +1,6 @@
 ﻿using RaceDay.Api.Models;
 
-namespace RaceDay.Api.DTOs;
+namespace RaceDay.Api.DTOs.Responses;
 
 //what a participant sees about one of their enrolments
 //includes the event and category details so the front end doesnt have to look them up
